@@ -152,7 +152,7 @@ namespace BeautySalon17.Pages
             {
                 // Создаём горизонтальную панель, чтобы разместить старую и новую цену рядом
                 StackPanel pricePanel = new StackPanel
-                {
+                { 
                     Orientation = Orientation.Horizontal,
                     HorizontalAlignment = HorizontalAlignment.Center
                 };
