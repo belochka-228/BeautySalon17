@@ -29,22 +29,14 @@ namespace BeautySalon17.Windows
 
             // Заполняем все поля данными из товара
             TxtName.Text = product.Name;
-            TxtDescription.Text = string.IsNullOrEmpty(product.Description)
-                ? "Описание отсутствует."
-                : product.Description;
+            TxtDescription.Text = string.IsNullOrEmpty(product.Description) ? "Описание отсутствует." : product.Description;
 
             // Рейтинг (Rating — double, поэтому просто форматируем)
-            TxtRating.Text = product.Rating > 0
-                ? $"★ {product.Rating:F1}"
-                : "Нет оценок";
+            TxtRating.Text = product.Rating > 0 ? $"★ {product.Rating:F1}" : "Нет оценок";
 
             // Производитель и тип товара (если они загружены)
-            TxtManufacturer.Text = product.Manufacturers != null
-                ? $"Производитель: {product.Manufacturers.Name}"
-                : "Производитель не указан";
-            TxtProductType.Text = product.ProductTypes != null
-                ? $"Тип: {product.ProductTypes.Name}"
-                : "Тип не указан";
+            TxtManufacturer.Text = product.Manufacturers != null ? $"Производитель: {product.Manufacturers.Name}" : "Производитель не указан";
+            TxtProductType.Text = product.ProductTypes != null ? $"Тип: {product.ProductTypes.Name}" : "Тип не указан";
 
             // Цена с учётом скидки
             decimal finalPrice = product.Price * (1 - product.Discount / 100m);

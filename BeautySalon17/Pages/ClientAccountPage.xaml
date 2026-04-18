@@ -8,7 +8,31 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="ClientAccountPage">
 
-    <Grid>
-        
+    <!-- Простая сетка: кнопка "Назад" и вкладки -->
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- для кнопки "Назад" -->
+            <RowDefinition Height="*"/>
+            <!-- вкладки займут всё остальное -->
+        </Grid.RowDefinitions>
+
+        <!-- Кнопка "Назад" (обязательна по заданию) -->
+        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+                HorizontalAlignment="Left" Margin="0,0,0,10"
+                Click="BtnBack_Click"/>
+
+        <!-- TabControl – переключатель вкладок -->
+        <TabControl Grid.Row="1">
+            <!-- Вкладка 1: Записи -->
+            <TabItem Header="Мои записи">
+                <DataGrid x:Name="DgAppointments" AutoGenerateColumns="True" IsReadOnly="True"/>
+                <!-- AutoGenerateColumns="True" – таблица сама создаст колонки по свойствам объекта -->
+            </TabItem>
+            <!-- Вкладка 2: Заказы -->
+            <TabItem Header="Мои заказы">
+                <DataGrid x:Name="DgOrders" AutoGenerateColumns="True" IsReadOnly="True"/>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Page>
