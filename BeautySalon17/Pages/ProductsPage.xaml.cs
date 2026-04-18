@@ -1,5 +1,10 @@
-﻿using System;
+﻿using BeautySalon17;
+using BeautySalon17.Helpers;
+using BeautySalon17.Windows;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,10 +17,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using BeautySalon17.Helpers;
-using System.IO;
-using BeautySalon17;
-using System.ComponentModel.DataAnnotations;
 
 namespace BeautySalon17.Pages
 {
@@ -26,10 +27,12 @@ namespace BeautySalon17.Pages
     {
         // Приватное поле для хранения полного списка товаров, загруженного из базы.
         private List<Products> _allProducts;
-
+        private List<ProductTypes> _productTypes;      // список всех типов товаров
+        private List<Manufacturers> _manufacturers;    // список производителей
         public ProductsPage()
         {
             InitializeComponent();
+            LoadFilters();      // <-- загружаем фильтры
             LoadProducts();
         }
 
@@ -42,7 +45,11 @@ namespace BeautySalon17.Pages
             {
                 using (var context = new BeautySalonEntities())
                 {
-                    _allProducts = context.Products.Include("Manufacturers").Include("ProductTypes").Where(p => p.IsActive == true).ToList();
+                    _allProducts = context.Products
+                                          .Include("Manufacturers")   
+                                          .Include("ProductTypes")    
+                                          .Where(p => p.IsActive == true)
+                                          .ToList();
                 }
                 // Передаём полученный список товаров методу, который отрисует их на экране
                 DisplayProducts(_allProducts);
@@ -55,16 +62,62 @@ namespace BeautySalon17.Pages
             }
         }
         /// <summary>
+        /// Загружает списки типов товаров и производителей из базы и заполняет ComboBox'ы.
+        /// </summary>
+        private void LoadFilters()
+        {
+            try
+            {
+                using (var context = new BeautySalonEntities())
+                {
+                    // Получаем все типы товаров
+                    _productTypes = context.ProductTypes.ToList();
+                    // Получаем всех производителей
+                    _manufacturers = context.Manufacturers.ToList();
+                }
+
+                // Настраиваем ComboBox для типов товаров
+                CmbProductType.ItemsSource = _productTypes;
+                CmbProductType.DisplayMemberPath = "Name";   // показываем название типа
+                CmbProductType.SelectedValuePath = "Id";     // при выборе будем получать Id
+
+                // Настраиваем ComboBox для производителей
+                CmbManufacturer.ItemsSource = _manufacturers;
+                CmbManufacturer.DisplayMemberPath = "Name";
+                CmbManufacturer.SelectedValuePath = "Id";
+
+                // Добавляем пустой элемент "Все" в начало каждого списка
+                // (чтобы можно было сбросить фильтр)
+                _productTypes.Insert(0, new ProductTypes { Id = 0, Name = "Все типы" });
+                _manufacturers.Insert(0, new Manufacturers { Id = 0, Name = "Все производители" });
+
+                // Обновляем привязку, чтобы новый элемент отобразился
+                CmbProductType.ItemsSource = null;
+                CmbProductType.ItemsSource = _productTypes;
+                CmbManufacturer.ItemsSource = null;
+                CmbManufacturer.ItemsSource = _manufacturers;
+
+                // Выбираем первый элемент ("Все") по умолчанию
+                CmbProductType.SelectedIndex = 0;
+                CmbManufacturer.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки фильтров: {ex.Message}", "Ошибка",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
         /// Отображает переданный список товаров в WrapPanel (ProductsWrapPanel).
         /// </summary>
         /// <param name="products">Список товаров для отображения.</param>
         private void DisplayProducts(List<Products> products)
         {
-            // Очищаем панель от всех дочерних элементов, чтобы заново заполнить её
             ProductsWrapPanel.Children.Clear();
 
             if (products == null || products.Count == 0)
-            {
+            {   
                 // Создаём текстовый блок с сообщением "Товары не найдены"
                 TextBlock noItemsText = new TextBlock
                 {
@@ -92,110 +145,125 @@ namespace BeautySalon17.Pages
          /// <returns>Готовый FrameworkElement (Border), который можно добавить в панель.</returns>
         private FrameworkElement CreateProductCard(Products product)
         {
-            // Внешняя рамка с закруглёнными углами, фоном и границей
+            // Внешняя рамка
             Border cardBorder = new Border
             {
-                Width = 200,                           // Ширина карточки
-                Height = 330,                          // Высота карточки
-                Margin = new Thickness(10),            // Отступы со всех сторон по 10 пикселей
-                Background = Brushes.White,            // Белый фон
-                BorderBrush = Brushes.LightGray,       // Светло-серая рамка
-                BorderThickness = new Thickness(1),    // Толщина рамки 1 пиксель
-                CornerRadius = new CornerRadius(8)     // Скругление углов 8 пикселей
+                Width = 200,
+                Height = 330,
+                Margin = new Thickness(10),
+                Background = Brushes.White,
+                BorderBrush = Brushes.LightGray,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8)
             };
 
-            // Создаём сетку (Grid) для размещения элементов внутри карточки
+            // Сетка
             Grid cardGrid = new Grid();
-            // Добавляем 4 строки с разной высотой
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) }); // Строка 0: фиксированная высота 150 (для картинки)
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // Строка 1: автоматическая высота (название)
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // Строка 2: автоматическая высота (цена)
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // Строка 3: автоматическая высота (кнопка)
+            cardGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) });
+            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // ----- 1. Изображение товара -----
+            // 1. Изображение
             Image productImage = new Image
             {
-                Stretch = Stretch.Uniform,                // Изображение масштабируется с сохранением пропорций
-                Margin = new Thickness(5),                // Отступы 5 пикселей со всех сторон
-                Source = GetImageSource(product.ImagePath) // Получаем картинку из файла
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(5),
+                Source = GetImageSource(product.ImagePath)
             };
-            Grid.SetRow(productImage, 0); // Помещаем изображение в строку 0
-            cardGrid.Children.Add(productImage); // Добавляем в сетку
+            Grid.SetRow(productImage, 0);
+            cardGrid.Children.Add(productImage);
 
-            // ----- 2. Название товара -----
+            // 2. Название
             TextBlock nameText = new TextBlock
             {
-                Text = product.Name,                          // Текст названия товара
-                FontWeight = FontWeights.Bold,                // Жирный шрифт
-                TextWrapping = TextWrapping.Wrap,             // Перенос текста, если не помещается
-                TextAlignment = TextAlignment.Center,         // Выравнивание по центру
-                Margin = new Thickness(5, 0, 5, 0)            // Отступы: слева 5, сверху 0, справа 5, снизу 0
+                Text = product.Name,
+                FontWeight = FontWeights.Bold,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(5, 0, 5, 0)
             };
-            Grid.SetRow(nameText, 1); // Строка 1
+            Grid.SetRow(nameText, 1);
             cardGrid.Children.Add(nameText);
 
-            // ----- 3. Цена (с учётом скидки) -----
-            // Вычисляем конечную цену с учётом скидки (скидка в процентах)
+            // 3. Цена
             decimal finalPrice = product.Price * (1 - product.Discount / 100m);
-            // Текстовый блок для отображения конечной цены
             TextBlock priceText = new TextBlock
             {
-                Text = $"{finalPrice:F2} руб.",    // Форматируем цену с двумя знаками после запятой
+                Text = $"{finalPrice:F2} руб.",
                 FontSize = 14,
-                Foreground = Brushes.Green,        // Зелёный цвет текста
+                Foreground = Brushes.Green,
                 TextAlignment = TextAlignment.Center,
                 Margin = new Thickness(5)
             };
 
-            // Если у товара есть скидка, показываем старую цену зачёркнутой
             if (product.Discount > 0)
             {
-                // Создаём горизонтальную панель, чтобы разместить старую и новую цену рядом
                 StackPanel pricePanel = new StackPanel
-                { 
+                {
                     Orientation = Orientation.Horizontal,
                     HorizontalAlignment = HorizontalAlignment.Center
                 };
-                // Текст со старой ценой (зачёркнут)
                 TextBlock oldPrice = new TextBlock
                 {
                     Text = $"{product.Price:F2}",
-                    TextDecorations = TextDecorations.Strikethrough, // Зачёркивание
+                    TextDecorations = TextDecorations.Strikethrough,
                     Foreground = Brushes.Gray,
-                    Margin = new Thickness(0, 0, 5, 0)               // Отступ справа 5
+                    Margin = new Thickness(0, 0, 5, 0)
                 };
-                pricePanel.Children.Add(oldPrice);  // Добавляем старую цену
-                pricePanel.Children.Add(priceText); // Добавляем новую цену
-
-                Grid.SetRow(pricePanel, 2); // Помещаем панель в строку 2
+                pricePanel.Children.Add(oldPrice);
+                pricePanel.Children.Add(priceText);
+                Grid.SetRow(pricePanel, 2);
                 cardGrid.Children.Add(pricePanel);
             }
             else
             {
-                // Если скидки нет, просто добавляем один текстовый блок с ценой
                 Grid.SetRow(priceText, 2);
                 cardGrid.Children.Add(priceText);
             }
 
-            // ----- 4. Кнопка "В корзину" -----
+            // 4. Панель с кнопками "В корзину" и "Подробнее"
+            StackPanel buttonsPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 5, 0, 5)
+            };
+
             Button addToCartBtn = new Button
             {
-                Content = "🛒 В корзину",                 // Текст на кнопке (с иконкой тележки)
+                Content = "🛒 В корзину",
+                Width = 90,
                 Height = 30,
-                Margin = new Thickness(10, 0, 10, 10),   // Отступы: слева 10, сверху 0, справа 10, снизу 10
-                Tag = product.Id,                        // Сохраняем ID товара в свойстве Tag (потом извлечём)
-                IsEnabled = CurrentUser.IsAuthenticated   // Кнопка активна только если пользователь авторизован
+                Tag = product.Id,
+                IsEnabled = CurrentUser.IsAuthenticated
             };
-            // Подписываемся на событие клика по кнопке
             addToCartBtn.Click += BtnAddToCart_Click;
+            buttonsPanel.Children.Add(addToCartBtn);
 
-            Grid.SetRow(addToCartBtn, 3); // Строка 3
-            cardGrid.Children.Add(addToCartBtn);
+            Button detailsBtn = new Button
+            {
+                Content = "Подробнее",
+                Width = 90,
+                Height = 30,
+                Margin = new Thickness(5, 0, 0, 0),
+                Tag = product
+            };
+            detailsBtn.Click += BtnDetails_Click;
+            buttonsPanel.Children.Add(detailsBtn);
 
-            // Помещаем сетку внутрь рамки
+            Grid.SetRow(buttonsPanel, 3);
+            cardGrid.Children.Add(buttonsPanel);
+
+            // Собираем карточку
             cardBorder.Child = cardGrid;
 
-            // Возвращаем готовую рамку (карточку)
+            // Выделение скидки >15%
+            if (product.Discount > 15)
+            {
+                cardBorder.Background = new SolidColorBrush(Color.FromRgb(255, 255, 200));
+            }
+
             return cardBorder;
         }
 
@@ -230,8 +298,80 @@ namespace BeautySalon17.Pages
                 return null; // Тоже возвращаем null
             }
         }
+        /// <summary>
+        /// Выполняет фильтрацию товаров по тексту, введённому в TxtSearch.
+        /// </summary>
+        private void PerformSearch()
+        {
+            string searchText = TxtSearch.Text.Trim();
 
-        // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
+            IEnumerable<Products> result;
+            if (string.IsNullOrEmpty(searchText))
+            {
+                result = _allProducts;
+            }
+            else
+            {
+                result = _allProducts.Where(p =>
+                    p.Name.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+            // Применяем сортировку (такую же, как в ApplyFilters)
+            ComboBoxItem selectedSortItem = CmbSorting.SelectedItem as ComboBoxItem;
+            if (selectedSortItem != null)
+            {
+                string sortDirection = selectedSortItem.Tag.ToString();
+                if (sortDirection == "asc")
+                    result = result.OrderBy(p => p.Rating);
+                else
+                    result = result.OrderByDescending(p => p.Rating);
+            }
+
+            DisplayProducts(result.ToList());
+        }
+
+
+        /// <summary>
+        /// Применяет фильтры по типу и производителю и отображает отфильтрованные товары.
+        /// </summary>
+        private void ApplyFilters()
+        {
+            // Если _allProducts ещё не загружен — выходим
+            if (_allProducts == null) return;
+
+            // Получаем выбранные Id из ComboBox'ов
+            int selectedTypeId = (int)CmbProductType.SelectedValue;
+            int selectedManufacturerId = (int)CmbManufacturer.SelectedValue;
+
+            // Начинаем с полного списка товаров
+            IEnumerable<Products> filtered = _allProducts;
+
+            // Фильтр по типу товара (если выбрано что-то кроме "Все")
+            if (selectedTypeId != 0)
+            {
+                filtered = filtered.Where(p => p.ProductTypeId == selectedTypeId);
+            }
+
+            // Фильтр по производителю (если выбрано что-то кроме "Все")
+            if (selectedManufacturerId != 0)
+            {
+                filtered = filtered.Where(p => p.ManufacturerId == selectedManufacturerId);
+            }
+
+            // Получаем выбранный ComboBoxItem
+            ComboBoxItem selectedSortItem = CmbSorting.SelectedItem as ComboBoxItem;
+            if (selectedSortItem != null)
+            {
+                string sortDirection = selectedSortItem.Tag.ToString(); // "asc" или "desc"
+                if (sortDirection == "asc")
+                    filtered = filtered.OrderBy(p => p.Rating);
+                else
+                    filtered = filtered.OrderByDescending(p => p.Rating);
+            }
+
+            // Отображаем отфильтрованный список
+            DisplayProducts(filtered.ToList());
+        }
 
         /// <summary>
         /// Обработчик нажатия на кнопку "Назад".
@@ -265,29 +405,21 @@ namespace BeautySalon17.Pages
         }
 
         /// <summary>
-        /// Выполняет фильтрацию товаров по тексту, введённому в TxtSearch.
+        /// Срабатывает при изменении выбора в любом из ComboBox фильтров.
         /// </summary>
-        private void PerformSearch()
+        private void Filter_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Получаем текст из поля поиска и убираем лишние пробелы в начале и конце
-            string searchText = TxtSearch.Text.Trim();
+            ApplyFilters();
+        }
 
-            // Если текст пустой — показываем все товары
-            if (string.IsNullOrEmpty(searchText))
-            {
-                DisplayProducts(_allProducts);
-            }
-            else
-            {
-                // Иначе фильтруем список _allProducts: оставляем только те товары,
-                // в названии которых содержится искомая строка (без учёта регистра)
-                var filtered = _allProducts.Where(p =>
-                    p.Name.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0
-                ).ToList();
-
-                // Отображаем отфильтрованный список
-                DisplayProducts(filtered);
-            }
+        /// <summary>
+        /// Сбрасывает оба фильтра на значение "Все" и показывает все товары.
+        /// </summary>
+        private void BtnResetFilters_Click(object sender, RoutedEventArgs e)
+        {
+            CmbProductType.SelectedIndex = 0;
+            CmbManufacturer.SelectedIndex = 0;
+            // ApplyFilters вызовется автоматически из-за изменения SelectedIndex
         }
 
         /// <summary>
@@ -358,6 +490,24 @@ namespace BeautySalon17.Pages
                 // Показываем сообщение с ошибкой
                 MessageBox.Show($"Ошибка добавления в корзину: {ex.Message}", "Ошибка",
                                 MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Срабатывает при изменении выбора в ComboBox сортировки.
+        /// </summary>
+        private void Sorting_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilters(); // Переприменяем фильтры (а внутри будет и сортировка)
+        }
+        private void BtnDetails_Click(object sender, RoutedEventArgs e)
+        {
+            Button clickedButton = sender as Button;
+            if (clickedButton?.Tag is Products product)
+            {
+                ProductDetailWindow detailWindow = new ProductDetailWindow(product);
+                detailWindow.Owner = Window.GetWindow(this);
+                detailWindow.ShowDialog();
             }
         }
     }
