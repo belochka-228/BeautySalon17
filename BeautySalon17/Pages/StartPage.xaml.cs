@@ -1,79 +1,53 @@
 ﻿using BeautySalon17.Helpers;
-using BeautySalon17.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using BeautySalon17.Windows;
 
 namespace BeautySalon17.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для StartPage.xaml
-    /// </summary>
     public partial class StartPage : Page
     {
-        private List<Services> _allServices;  // все услуги
-        private List<Users> _allMasters;          // все мастера (пользователи с ролью 2)
+        // Данные для работы страницы
+        private List<Services> _allServices;      // все услуги (после фильтрации)
+        private List<Users> _allMasters;          // все мастера (для фильтра)
+        private Services _selectedService;        // выбранная услуга
+        private int _selectedMasterId;            // ID выбранного мастера
+        private DateTime _selectedDateTime;       // полная дата и время записи
+        private DateTime _selectedDate = DateTime.Today; // выбранная дата (по умолчанию сегодня)
+
         public StartPage()
         {
             InitializeComponent();
             UpdateButtonsVisibility();
-            LoadServices();   // загружаем услуги
-            LoadFilters();
+            LoadFilters();      // загружаем данные для фильтров
+            LoadAllServices();  // отображаем все услуги в сетке
         }
 
-        /// <summary>
-        /// Загружает все услуги из базы и отображает их в WrapPanel.
-        /// </summary>
-        private void LoadServices()
-        {
-            try
-            {
-                using (var context = new BeautySalonEntities())
-                {
-                    _allServices = context.Services.ToList();
-                }
-                DisplayServices(_allServices);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка загрузки услуг: {ex.Message}", "Ошибка",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+        // ==================== ЗАГРУЗКА ДАННЫХ ====================
         private void LoadFilters()
         {
             try
             {
                 using (var context = new BeautySalonEntities())
                 {
-                    // Загружаем все услуги
                     _allServices = context.Services.ToList();
-                    // Загружаем всех мастеров (RoleId = 2)
                     _allMasters = context.Users.Where(u => u.RoleId == 2).ToList();
                 }
 
-                // Добавляем "Все" в начало списков
+                // Добавляем пункт "Все"
                 _allServices.Insert(0, new Services { Id = 0, Name = "Все услуги" });
                 _allMasters.Insert(0, new Users { Id = 0, Surname = "Все мастера", Name = "" });
 
-                // Настраиваем ComboBox услуг
+                // Настраиваем ComboBox'ы
                 CmbFilterService.ItemsSource = _allServices;
                 CmbFilterService.DisplayMemberPath = "Name";
                 CmbFilterService.SelectedValuePath = "Id";
                 CmbFilterService.SelectedIndex = 0;
 
-                // Настраиваем ComboBox мастеров (показываем фамилию)
                 CmbFilterMaster.ItemsSource = _allMasters;
                 CmbFilterMaster.DisplayMemberPath = "Surname";
                 CmbFilterMaster.SelectedValuePath = "Id";
@@ -84,100 +58,117 @@ namespace BeautySalon17.Pages
                 MessageBox.Show($"Ошибка загрузки фильтров: {ex.Message}");
             }
         }
-        private void ApplyServiceFilters()
+
+        private void LoadAllServices()
         {
-            if (_allServices == null) return;
-
-            int selectedServiceId = 0;
-            if (CmbFilterService.SelectedValue != null && CmbFilterService.SelectedValue is int)
-                selectedServiceId = (int)CmbFilterService.SelectedValue;
-
-            int selectedMasterId = 0;
-            if (CmbFilterMaster.SelectedValue != null && CmbFilterMaster.SelectedValue is int)
-                selectedMasterId = (int)CmbFilterMaster.SelectedValue;
-
-            IEnumerable<Services> filtered = _allServices.Where(s => s.Id != 0); // исключаем "Все услуги"
-
-            // Фильтр по конкретной услуге
-            if (selectedServiceId != 0)
-                filtered = filtered.Where(s => s.Id == selectedServiceId);
-
-            // Фильтр по мастеру: оставляем услуги, которые оказывает выбранный мастер
-            if (selectedMasterId != 0)
+            try
             {
                 using (var context = new BeautySalonEntities())
                 {
-                    // Получаем Id услуг, которые делает этот мастер
-                    var masterServiceIds = context.MasterServices
-                                                  .Where(ms => ms.MasterId == selectedMasterId)
-                                                  .Select(ms => ms.ServiceId)
-                                                  .ToList();
-                    filtered = filtered.Where(s => masterServiceIds.Contains(s.Id));
+                    var services = context.Services.ToList();
+                    DisplayServices(services);
                 }
             }
-
-            DisplayServices(filtered.ToList());
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки услуг: {ex.Message}");
+            }
         }
 
-        /// <summary>
-        /// Отображает список услуг в виде карточек.
-        /// </summary>
+        // ==================== ФИЛЬТРАЦИЯ ====================
+        private void Filter_SelectionChanged(object sender, SelectionChangedEventArgs e) => ApplyFilters();
+
+        private void BtnResetFilters_Click(object sender, RoutedEventArgs e)
+        {
+            CmbFilterService.SelectedIndex = 0;
+            CmbFilterMaster.SelectedIndex = 0;
+        }
+
+        private void ApplyFilters()
+        {
+            int serviceId = GetSelectedId(CmbFilterService);
+            int masterId = GetSelectedId(CmbFilterMaster);
+
+            using (var context = new BeautySalonEntities())
+            {
+                IEnumerable<Services> filtered = context.Services.AsEnumerable();
+
+                if (serviceId != 0)
+                    filtered = filtered.Where(s => s.Id == serviceId);
+
+                if (masterId != 0)
+                {
+                    var masterServiceIds = context.MasterServices
+                        .Where(ms => ms.MasterId == masterId)
+                        .Select(ms => ms.ServiceId)
+                        .ToList();
+                    filtered = filtered.Where(s => masterServiceIds.Contains(s.Id));
+                }
+
+                DisplayServices(filtered.ToList());
+            }
+
+            ClearSelection(); // сбрасываем правую панель
+        }
+
+        private int GetSelectedId(ComboBox cmb)
+        {
+            if (cmb.SelectedValue != null && cmb.SelectedValue is int id)
+                return id;
+            return 0;
+        }
+
+        // ==================== ОТОБРАЖЕНИЕ СЕТКИ УСЛУГ ====================
         private void DisplayServices(List<Services> services)
         {
             ServicesWrapPanel.Children.Clear();
 
             if (services == null || services.Count == 0)
             {
-                TextBlock noItems = new TextBlock
+                ServicesWrapPanel.Children.Add(new TextBlock
                 {
-                    Text = "Услуги временно недоступны.",
+                    Text = "Услуги не найдены.",
                     FontSize = 16,
                     Foreground = Brushes.Gray,
                     Margin = new Thickness(20)
-                };
-                ServicesWrapPanel.Children.Add(noItems);
+                });
                 return;
             }
 
             foreach (var service in services)
-            {
-                FrameworkElement card = CreateServiceCard(service);
-                ServicesWrapPanel.Children.Add(card);
-            }
+                ServicesWrapPanel.Children.Add(CreateServiceCard(service));
         }
 
-        /// <summary>
-        /// Создаёт карточку для одной услуги.
-        /// </summary>
         private FrameworkElement CreateServiceCard(Services service)
         {
             Border border = new Border
             {
                 Width = 200,
-                Height = 280,
+                Height = 260,
                 Margin = new Thickness(10),
                 Background = Brushes.White,
                 BorderBrush = Brushes.LightGray,
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8)
+                CornerRadius = new CornerRadius(8),
+                Tag = service,
+                Cursor = System.Windows.Input.Cursors.Hand
             };
+            border.MouseLeftButtonDown += ServiceCard_Click;
 
             Grid grid = new Grid();
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(120) }); // картинка
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // название
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // длительность
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // цена
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });     // кнопка
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(120) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // 1. Картинка (пока просто цветной прямоугольник с текстом)
-            //    Можно потом заменить на настоящие картинки, если добавишь в базу поле ImagePath для услуг.
-            Border imagePlaceholder = new Border
+            // Заглушка картинки
+            Border imgPlaceholder = new Border
             {
                 Background = new SolidColorBrush(Color.FromRgb(230, 230, 250)),
                 Margin = new Thickness(10),
                 CornerRadius = new CornerRadius(4)
             };
-            TextBlock imageText = new TextBlock
+            imgPlaceholder.Child = new TextBlock
             {
                 Text = service.Name.Substring(0, Math.Min(2, service.Name.Length)),
                 FontSize = 30,
@@ -186,11 +177,10 @@ namespace BeautySalon17.Pages
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            imagePlaceholder.Child = imageText;
-            Grid.SetRow(imagePlaceholder, 0);
-            grid.Children.Add(imagePlaceholder);
+            Grid.SetRow(imgPlaceholder, 0);
+            grid.Children.Add(imgPlaceholder);
 
-            // 2. Название
+            // Название
             TextBlock nameText = new TextBlock
             {
                 Text = service.Name,
@@ -202,7 +192,7 @@ namespace BeautySalon17.Pages
             Grid.SetRow(nameText, 1);
             grid.Children.Add(nameText);
 
-            // 3. Длительность
+            // Длительность
             TextBlock durationText = new TextBlock
             {
                 Text = $"⏱ {service.Duration} мин.",
@@ -214,11 +204,11 @@ namespace BeautySalon17.Pages
             Grid.SetRow(durationText, 2);
             grid.Children.Add(durationText);
 
-            // 4. Цена
+            // Цена
             TextBlock priceText = new TextBlock
             {
                 Text = $"{service.Price:F2} руб.",
-                FontSize = 16,
+                FontSize = 14,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.Green,
                 TextAlignment = TextAlignment.Center,
@@ -227,115 +217,171 @@ namespace BeautySalon17.Pages
             Grid.SetRow(priceText, 3);
             grid.Children.Add(priceText);
 
-            // 5. Кнопка "Записаться"
-            Button bookBtn = new Button
-            {
-                Content = "Записаться",
-                Height = 28,
-                Margin = new Thickness(10, 5, 10, 10),
-                Tag = service.Id,
-                IsEnabled = CurrentUser.IsAuthenticated   // только для авторизованных
-            };
-            bookBtn.Click += BtnBook_Click;
-            Grid.SetRow(bookBtn, 4);
-            grid.Children.Add(bookBtn);
-
             border.Child = grid;
             return border;
         }
 
-        /// <summary>
-        /// Обработчик кнопки "Записаться" — откроем окно выбора мастера и времени (позже).
-        /// </summary>
+        // ==================== ВЫБОР УСЛУГИ ====================
+        private void ServiceCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is Border border && border.Tag is Services service)
+            {
+                _selectedService = service;
+                TxtSelectedService.Text = $"Услуга: {service.Name}";
+                TxtHint.Visibility = Visibility.Collapsed;
+                SelectionPanel.Visibility = Visibility.Visible;
+
+                LoadMastersForService(service.Id);
+                LbTimeSlots.ItemsSource = null;
+                BtnBook.IsEnabled = false;
+                DpAppointmentDate.SelectedDate = DateTime.Today;
+            }
+        }
+
+        private void LoadMastersForService(int serviceId)
+        {
+            try
+            {
+                using (var context = new BeautySalonEntities())
+                {
+                    var masterIds = context.MasterServices
+                        .Where(ms => ms.ServiceId == serviceId)
+                        .Select(ms => ms.MasterId)
+                        .ToList();
+                    var masters = context.Users
+                        .Where(u => masterIds.Contains(u.Id) && u.RoleId == 2)
+                        .Select(u => new { u.Id, FullName = u.Surname + " " + u.Name })
+                        .ToList();
+                    LbMasters.ItemsSource = masters;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки мастеров: {ex.Message}");
+            }
+        }
+
+        // ==================== ВЫБОР МАСТЕРА ====================
+        private void LbMasters_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LbMasters.SelectedValue is int masterId)
+            {
+                _selectedMasterId = masterId;
+                DpAppointmentDate.SelectedDate = DateTime.Today;
+                LoadTimeSlots();
+            }
+            else
+            {
+                _selectedMasterId = 0;
+                if (LbTimeSlots != null) LbTimeSlots.ItemsSource = null;
+                if (BtnBook != null) BtnBook.IsEnabled = false;
+            }
+        }
+
+        private void LoadTimeSlots()
+        {
+            if (LbTimeSlots == null) return;
+
+            var slots = new List<object>();
+            DateTime start = _selectedDate.AddHours(9);
+            DateTime end = _selectedDate.AddHours(18);
+
+            while (start <= end)
+            {
+                slots.Add(new { TimeSlot = start.ToString("HH:mm") });
+                start = start.AddHours(1);
+            }
+            LbTimeSlots.ItemsSource = slots;
+            BtnBook.IsEnabled = false;
+        }
+
+        private void DpAppointmentDate_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DpAppointmentDate.SelectedDate.HasValue)
+            {
+                _selectedDate = DpAppointmentDate.SelectedDate.Value;
+                if (_selectedMasterId != 0)
+                    LoadTimeSlots();
+                else if (LbTimeSlots != null)
+                    LbTimeSlots.ItemsSource = null;
+            }
+            else if (LbTimeSlots != null)
+            {
+                LbTimeSlots.ItemsSource = null;
+            }
+            if (BtnBook != null) BtnBook.IsEnabled = false;
+        }
+
+        // ==================== ВЫБОР ВРЕМЕНИ ====================
+        private void LbTimeSlots_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LbTimeSlots.SelectedItem != null)
+            {
+                dynamic slot = LbTimeSlots.SelectedItem;
+                string timeStr = slot.TimeSlot;
+                _selectedDateTime = _selectedDate.Date.Add(TimeSpan.Parse(timeStr));
+                BtnBook.IsEnabled = true;
+            }
+            else
+            {
+                BtnBook.IsEnabled = false;
+            }
+        }
+
+        // ==================== КНОПКА "ЗАПИСАТЬСЯ" ====================
         private void BtnBook_Click(object sender, RoutedEventArgs e)
         {
-            Button btn = sender as Button;
-            if (btn?.Tag is int serviceId)
+            if (!CurrentUser.IsAuthenticated)
             {
-                // Проверяем, авторизован ли пользователь
-                if (!CurrentUser.IsAuthenticated)
-                {
-                    MessageBox.Show("Чтобы записаться, необходимо войти в систему.", "Требуется авторизация",
-                                    MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
+                MessageBox.Show("Чтобы записаться, необходимо войти в систему.",
+                    "Требуется авторизация", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-                // Открываем окно выбора мастера и времени
-                SelectMasterTimeWindow selectWindow = new SelectMasterTimeWindow(serviceId);
-                selectWindow.Owner = Window.GetWindow(this);
-                bool? result = selectWindow.ShowDialog();
+            NavigationService.Navigate(new AppointmentConfirmPage(
+                _selectedService.Id, _selectedMasterId, _selectedDateTime));
+        }
 
-                // Если окно закрыто с результатом true, то навигация уже произошла внутри окн
+        private void ClearSelection()
+        {
+            _selectedService = null;
+            SelectionPanel.Visibility = Visibility.Collapsed;
+            TxtHint.Visibility = Visibility.Visible;
+            LbMasters.ItemsSource = null;
+            if (LbTimeSlots != null) LbTimeSlots.ItemsSource = null;
+            if (BtnBook != null) BtnBook.IsEnabled = false;
+        }
+
+        // ==================== КНОПКИ ВЕРХНЕЙ ПАНЕЛИ ====================
+        private void UpdateButtonsVisibility()
+        {
+            if (CurrentUser.IsAuthenticated)
+            {
+                BtnLogin.Visibility = Visibility.Collapsed;
+                BtnAccount.Visibility = Visibility.Visible;
+                BtnAccount.Content = CurrentUser.FullName ?? "Аккаунт";
+            }
+            else
+            {
+                BtnLogin.Visibility = Visibility.Visible;
+                BtnAccount.Visibility = Visibility.Collapsed;
             }
         }
-        /// <summary>
-        /// Обновляет видимость кнопок "Войти" и "Аккаунт" на основе статуса авторизации.
-        /// </summary>
-        private void UpdateButtonsVisibility()
-                {
-                    // CurrentUser.IsAuthenticated — свойство, которое возвращает true, если Id пользователя не равен 0
-                    if (CurrentUser.IsAuthenticated)
-                    {
-                        BtnLogin.Visibility = Visibility.Collapsed;
-                        BtnAccount.Visibility = Visibility.Visible;
-                        BtnAccount.Content = CurrentUser.FullName ?? "Аккаунт";
-                    }
-                    else
-                    {
-                        BtnLogin.Visibility = Visibility.Visible;
-                        BtnAccount.Visibility = Visibility.Collapsed;
-                    }
-                }
-        /// <summary>
-        /// Обработчик нажатия на кнопку "Войти"
-        /// </summary>
-        private void BtnLogin_Click(object sender, RoutedEventArgs e)
-        {
-            NavigationService.Navigate(new LoginPage());
-        }
 
-        /// <summary>
-        /// Обработчик нажатия на кнопку "Аккаунт"
-        /// </summary>
+        private void BtnLogin_Click(object sender, RoutedEventArgs e) => NavigationService.Navigate(new LoginPage());
+
         private void BtnAccount_Click(object sender, RoutedEventArgs e)
         {
-            // В зависимости от роли пользователя открываем нужную страницу
             switch (CurrentUser.RoleId)
             {
-                case 1:
-                    NavigationService.Navigate(new ClientAccountPage());
-                    break;
-                case 2:
-                    NavigationService.Navigate(new MasterPage());
-                    break;
-                case 3:
-                    NavigationService.Navigate(new ManagerPage());
-                    break;
-                case 4:
-                    NavigationService.Navigate(new AdminPage());
-                    break;
-                default:
-                    MessageBox.Show("Неизвестная роль пользователя", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    break;
+                case 1: NavigationService.Navigate(new ClientAccountPage()); break;
+                case 2: NavigationService.Navigate(new MasterPage()); break;
+                case 3: NavigationService.Navigate(new ManagerPage()); break;
+                case 4: NavigationService.Navigate(new AdminPage()); break;
+                default: MessageBox.Show("Неизвестная роль"); break;
             }
         }
-        /// <summary>
-        /// Обработчик нажатия на кнопку "Товары"
-        /// </summary>
-        private void BtnProducts_Click(object sender, RoutedEventArgs e)
-        {
-            NavigationService.Navigate(new ProductsPage());
-        }
-        private void Filter_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApplyServiceFilters();
-        }
 
-        private void BtnResetFilters_Click(object sender, RoutedEventArgs e)
-        {
-            CmbFilterService.SelectedIndex = 0;
-            CmbFilterMaster.SelectedIndex = 0;
-            // ApplyServiceFilters вызовется автоматически через SelectionChanged
-        }
+        private void BtnProducts_Click(object sender, RoutedEventArgs e) => NavigationService.Navigate(new ProductsPage());
     }
 }
