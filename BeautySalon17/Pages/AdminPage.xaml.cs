@@ -1,4 +1,5 @@
 ﻿using BeautySalon17.Helpers;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,62 +25,69 @@ namespace BeautySalon17.Pages
         public AdminPage()
         {
             InitializeComponent();
-            this.Loaded += Page_Loaded;
+            Loaded += (s, e) => LoadUsers();
         }
 
-        private void Page_Loaded(object sender, RoutedEventArgs e)
-        {
-            LoadUsers();
-        }
-
-        // ==================== ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ====================
+        // Загрузка списка пользователей в DataGrid
         private void LoadUsers()
         {
             try
             {
-                using (var context = new BeautySalonEntities())
-                {
-                    // Загружаем пользователей вместе с ролями
-                    var users = context.Users.Include("Roles").ToList();
-                    DgUsers.ItemsSource = users;
-                }
+                using (var db = new BeautySalonEntities())
+                    DgUsers.ItemsSource = db.Users.Include("Roles").ToList();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки пользователей: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки: {ex.Message}");
             }
         }
 
-        // ==================== ДОБАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ ====================
+        // Получение выбранного пользователя с проверкой
+        private Users GetSelectedUser()
+        {
+            var user = DgUsers.SelectedItem as Users;
+            if (user == null)
+                MessageBox.Show("Выберите пользователя из списка.");
+            return user;
+        }
+
+        // Проверка, не пытается ли админ изменить сам себя
+        private bool IsSelf(Users user, string action)
+        {
+            if (user.Id == CurrentUser.Id)
+            {
+                MessageBox.Show($"Нельзя {action} самому себе.", "Ограничение");
+                return true;
+            }
+            return false;
+        }
+
+        // Добавление нового пользователя (через последовательные InputBox)
         private void BtnAddUser_Click(object sender, RoutedEventArgs e)
         {
-            string surname = Microsoft.VisualBasic.Interaction.InputBox("Фамилия:", "Добавить пользователя", "");
+            // Сбор данных от пользователя
+            string surname = Interaction.InputBox("Фамилия:", "Новый пользователь", "");
             if (string.IsNullOrWhiteSpace(surname)) return;
-
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Имя:", "Добавить пользователя", "");
+            string name = Interaction.InputBox("Имя:", "Новый пользователь", "");
             if (string.IsNullOrWhiteSpace(name)) return;
-
-            string phone = Microsoft.VisualBasic.Interaction.InputBox("Телефон:", "Добавить пользователя", "");
+            string phone = Interaction.InputBox("Телефон:", "Новый пользователь", "");
             if (string.IsNullOrWhiteSpace(phone)) return;
-
-            string login = Microsoft.VisualBasic.Interaction.InputBox("Логин:", "Добавить пользователя", "");
+            string login = Interaction.InputBox("Логин:", "Новый пользователь", "");
             if (string.IsNullOrWhiteSpace(login)) return;
-
-            string password = Microsoft.VisualBasic.Interaction.InputBox("Пароль:", "Добавить пользователя", "");
+            string password = Interaction.InputBox("Пароль:", "Новый пользователь", "");
             if (string.IsNullOrWhiteSpace(password)) return;
-
-            string roleStr = Microsoft.VisualBasic.Interaction.InputBox("Роль (1-Клиент, 2-Мастер, 3-Менеджер, 4-Админ):", "Добавить пользователя", "1");
+            string roleStr = Interaction.InputBox("Роль (1-Клиент,2-Мастер,3-Менеджер,4-Админ):", "Новый пользователь", "1");
             if (!int.TryParse(roleStr, out int roleId) || roleId < 1 || roleId > 4)
             {
-                MessageBox.Show("Неверный код роли.", "Ошибка");
+                MessageBox.Show("Некорректный код роли.");
                 return;
             }
 
             try
             {
-                using (var context = new BeautySalonEntities())
+                using (var db = new BeautySalonEntities())
                 {
-                    var newUser = new Users
+                    db.Users.Add(new Users
                     {
                         Surname = surname,
                         Name = name,
@@ -88,12 +96,11 @@ namespace BeautySalon17.Pages
                         Password = password,
                         RoleId = roleId,
                         IsActive = true
-                    };
-                    context.Users.Add(newUser);
-                    context.SaveChanges();
+                    });
+                    db.SaveChanges();
                 }
                 LoadUsers();
-                MessageBox.Show("Пользователь добавлен.", "Успех");
+                MessageBox.Show("Пользователь успешно добавлен.");
             }
             catch (Exception ex)
             {
@@ -101,87 +108,72 @@ namespace BeautySalon17.Pages
             }
         }
 
-        // ==================== ИЗМЕНЕНИЕ ПОЛЬЗОВАТЕЛЯ ====================
+        // Редактирование выбранного пользователя
         private void BtnEditUser_Click(object sender, RoutedEventArgs e)
         {
-            if (!(DgUsers.SelectedItem is Users selectedUser))
-            {
-                MessageBox.Show("Выберите пользователя.");
-                return;
-            }
+            var user = GetSelectedUser();
+            if (user == null) return;
 
-            string surname = Microsoft.VisualBasic.Interaction.InputBox("Фамилия:", "Изменить", selectedUser.Surname);
+            string surname = Interaction.InputBox("Фамилия:", "Редактирование", user.Surname);
             if (string.IsNullOrWhiteSpace(surname)) return;
-
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Имя:", "Изменить", selectedUser.Name);
+            string name = Interaction.InputBox("Имя:", "Редактирование", user.Name);
             if (string.IsNullOrWhiteSpace(name)) return;
-
-            string phone = Microsoft.VisualBasic.Interaction.InputBox("Телефон:", "Изменить", selectedUser.Phone);
+            string phone = Interaction.InputBox("Телефон:", "Редактирование", user.Phone);
             if (string.IsNullOrWhiteSpace(phone)) return;
-
-            string login = Microsoft.VisualBasic.Interaction.InputBox("Логин:", "Изменить", selectedUser.Login);
+            string login = Interaction.InputBox("Логин:", "Редактирование", user.Login);
             if (string.IsNullOrWhiteSpace(login)) return;
-
-            string password = Microsoft.VisualBasic.Interaction.InputBox("Пароль (оставьте пустым, чтобы не менять):", "Изменить", "");
+            string password = Interaction.InputBox("Новый пароль (оставьте пустым, чтобы не менять):", "Редактирование", "");
 
             try
             {
-                using (var context = new BeautySalonEntities())
+                using (var db = new BeautySalonEntities())
                 {
-                    var user = context.Users.Find(selectedUser.Id);
-                    if (user != null)
+                    var dbUser = db.Users.Find(user.Id);
+                    if (dbUser != null)
                     {
-                        user.Surname = surname;
-                        user.Name = name;
-                        user.Phone = phone;
-                        user.Login = login;
+                        dbUser.Surname = surname;
+                        dbUser.Name = name;
+                        dbUser.Phone = phone;
+                        dbUser.Login = login;
                         if (!string.IsNullOrWhiteSpace(password))
-                            user.Password = password;
-                        context.SaveChanges();
+                            dbUser.Password = password;
+                        db.SaveChanges();
                     }
                 }
                 LoadUsers();
-                MessageBox.Show("Данные обновлены.", "Успех");
+                MessageBox.Show("Данные обновлены.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка изменения: {ex.Message}");
+                MessageBox.Show($"Ошибка при редактировании: {ex.Message}");
             }
         }
 
-        // ==================== ЗАМОРОЗИТЬ ПОЛЬЗОВАТЕЛЯ ====================
-        private void BtnFreezeUser_Click(object sender, RoutedEventArgs e)
+        // Универсальный метод блокировки/разблокировки
+        private void SetUserActiveState(bool activate)
         {
-            if (!(DgUsers.SelectedItem is Users selectedUser))
+            var user = GetSelectedUser();
+            if (user == null) return;
+            if (IsSelf(user, activate ? "разблокировать" : "заблокировать")) return;
+
+            if (user.IsActive == activate)
             {
-                MessageBox.Show("Выберите пользователя.");
+                MessageBox.Show($"Пользователь уже {(activate ? "активен" : "заблокирован")}.");
                 return;
             }
 
-            if (selectedUser.Id == CurrentUser.Id)
-            {
-                MessageBox.Show("Нельзя заморозить самого себя.", "Ошибка");
-                return;
-            }
-
-            if (selectedUser.IsActive == false)
-            {
-                MessageBox.Show("Пользователь уже заморожен.");
-                return;
-            }
-
-            var result = MessageBox.Show($"Заморозить пользователя {selectedUser.Surname} {selectedUser.Name}?",
-                                         "Подтверждение", MessageBoxButton.YesNo);
-            if (result == MessageBoxResult.Yes)
+            string action = activate ? "Разблокировать" : "Заблокировать";
+            if (MessageBox.Show($"{action} пользователя {user.Surname} {user.Name}?",
+                "Подтверждение", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 try
                 {
-                    using (var context = new BeautySalonEntities())
+                    using (var db = new BeautySalonEntities())
                     {
-                        var user = context.Users.Find(selectedUser.Id);
-                        if (user != null)
-                            user.IsActive = false;
-                        context.SaveChanges();
+                        var dbUser = db.Users.Find(user.Id);
+                        if (dbUser != null)
+                            dbUser.IsActive = activate;
+                        db.SaveChanges();
                     }
                     LoadUsers();
                 }
@@ -192,75 +184,33 @@ namespace BeautySalon17.Pages
             }
         }
 
-        // ==================== РАЗМОРОЗИТЬ ПОЛЬЗОВАТЕЛЯ ====================
-        private void BtnUnfreezeUser_Click(object sender, RoutedEventArgs e)
-        {
-            if (!(DgUsers.SelectedItem is Users selectedUser))
-            {
-                MessageBox.Show("Выберите пользователя.");
-                return;
-            }
+        private void BtnFreezeUser_Click(object sender, RoutedEventArgs e) => SetUserActiveState(false);
+        private void BtnUnfreezeUser_Click(object sender, RoutedEventArgs e) => SetUserActiveState(true);
 
-            if (selectedUser.IsActive == true)
-            {
-                MessageBox.Show("Пользователь уже активен.");
-                return;
-            }
-
-            var result = MessageBox.Show($"Разморозить пользователя {selectedUser.Surname} {selectedUser.Name}?",
-                                         "Подтверждение", MessageBoxButton.YesNo);
-            if (result == MessageBoxResult.Yes)
-            {
-                try
-                {
-                    using (var context = new BeautySalonEntities())
-                    {
-                        var user = context.Users.Find(selectedUser.Id);
-                        if (user != null)
-                            user.IsActive = true;
-                        context.SaveChanges();
-                    }
-                    LoadUsers();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка: {ex.Message}");
-                }
-            }
-        }
-
-        // ==================== СМЕНА РОЛИ ====================
+        // Смена роли выбранного пользователя
         private void BtnChangeRole_Click(object sender, RoutedEventArgs e)
         {
-            if (!(DgUsers.SelectedItem is Users selectedUser))
-            {
-                MessageBox.Show("Выберите пользователя.");
-                return;
-            }
+            var user = GetSelectedUser();
+            if (user == null) return;
+            if (IsSelf(user, "менять роль")) return;
 
-            if (selectedUser.Id == CurrentUser.Id)
-            {
-                MessageBox.Show("Нельзя изменить роль самому себе.", "Ошибка");
-                return;
-            }
-
-            string roleStr = Microsoft.VisualBasic.Interaction.InputBox(
-                "Введите новую роль (1-Клиент, 2-Мастер, 3-Менеджер, 4-Админ):",
-                "Смена роли", selectedUser.RoleId.ToString());
+            string roleStr = Interaction.InputBox(
+                "Новая роль (1-Клиент,2-Мастер,3-Менеджер,4-Админ):",
+                "Смена роли", user.RoleId.ToString());
 
             if (int.TryParse(roleStr, out int newRoleId) && newRoleId >= 1 && newRoleId <= 4)
             {
                 try
                 {
-                    using (var context = new BeautySalonEntities())
+                    using (var db = new BeautySalonEntities())
                     {
-                        var user = context.Users.Find(selectedUser.Id);
-                        if (user != null)
-                            user.RoleId = newRoleId;
-                        context.SaveChanges();
+                        var dbUser = db.Users.Find(user.Id);
+                        if (dbUser != null)
+                            dbUser.RoleId = newRoleId;
+                        db.SaveChanges();
                     }
                     LoadUsers();
-                    MessageBox.Show("Роль изменена.", "Успех");
+                    MessageBox.Show("Роль успешно изменена.");
                 }
                 catch (Exception ex)
                 {
@@ -269,11 +219,11 @@ namespace BeautySalon17.Pages
             }
             else
             {
-                MessageBox.Show("Некорректный код роли.", "Ошибка");
+                MessageBox.Show("Некорректный код роли.");
             }
         }
 
-        // ==================== КНОПКА "НАЗАД" ====================
+        // Возврат на предыдущую страницу
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (NavigationService.CanGoBack)

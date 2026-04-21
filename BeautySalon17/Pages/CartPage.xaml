@@ -9,7 +9,6 @@
       Title="Корзина"
       Height="Auto" Width="Auto">
     
-    <!-- Основная сетка страницы -->
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -23,10 +22,8 @@
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <!-- WrapPanel, как и на странице товаров, разместит карточки товаров корзины в сетку -->
             <WrapPanel x:Name="CartItemsWrapPanel" Orientation="Horizontal" HorizontalAlignment="Left" ItemWidth="220" ItemHeight="350"/>
         </ScrollViewer>
-
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock Text="Итого: " FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>

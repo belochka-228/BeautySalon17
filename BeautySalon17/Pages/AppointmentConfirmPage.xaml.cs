@@ -21,65 +21,49 @@ namespace BeautySalon17.Pages
     /// </summary>
     public partial class AppointmentConfirmPage : Page
     {
-        private int _serviceId;
-        private int _masterId;
-        private DateTime _appointmentDateTime;
+        private readonly int _serviceId, _masterId;
+        private readonly DateTime _dateTime;
+        private string _serviceName, _masterName;
+        private decimal _price;
 
-        private string _serviceName;
-        private string _masterFullName;
-        private decimal _servicePrice;
-
-        public AppointmentConfirmPage(int serviceId, int masterId, DateTime appointmentDateTime)
+        public AppointmentConfirmPage(int serviceId, int masterId, DateTime dateTime)
         {
             InitializeComponent();
             _serviceId = serviceId;
             _masterId = masterId;
-            _appointmentDateTime = appointmentDateTime;
-
-            LoadDetails();   // загружаем названия услуги и мастера
-            DisplayInfo();   // показываем на экране
+            _dateTime = dateTime;
+            LoadAndDisplay();
         }
 
-        /// <summary>
-        /// Загружает из базы название услуги и имя мастера.
-        /// </summary>
-        private void LoadDetails()
+        // Загружаем данные из БД и сразу показываем на экране
+        private void LoadAndDisplay()
         {
             try
             {
-                using (var context = new BeautySalonEntities())
+                using (var db = new BeautySalonEntities())
                 {
-                    var service = context.Services.Find(_serviceId);
+                    var service = db.Services.Find(_serviceId);
                     if (service != null)
                     {
                         _serviceName = service.Name;
-                        _servicePrice = service.Price;
+                        _price = service.Price;
                     }
 
-                    var master = context.Users.Find(_masterId);
+                    var master = db.Users.Find(_masterId);
                     if (master != null)
-                    {
-                        _masterFullName = $"{master.Surname} {master.Name}";
-                    }
+                        _masterName = $"{master.Surname} {master.Name}";
                 }
+
+                TxtServiceInfo.Text = $"{_serviceName} — {_price:F2} руб.";
+                TxtMasterInfo.Text = $"Мастер: {_masterName}";
+                TxtDateTimeInfo.Text = $"{_dateTime:dd.MM.yyyy HH:mm}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка загрузки: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Отображает информацию на странице.
-        /// </summary>
-        private void DisplayInfo()
-        {
-            TxtServiceInfo.Text = $"Услуга: {_serviceName} ( {_servicePrice:F2} руб. )";
-            TxtMasterInfo.Text = $"Мастер: {_masterFullName}";
-            TxtDateTimeInfo.Text = $"Дата и время: {_appointmentDateTime:dd.MM.yyyy HH:mm}";
-        }
-
-        // Кнопка "Назад"
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (NavigationService.CanGoBack)
@@ -88,39 +72,50 @@ namespace BeautySalon17.Pages
                 NavigationService.Navigate(new StartPage());
         }
 
-        // Кнопка "Записаться"
         private void BtnConfirm_Click(object sender, RoutedEventArgs e)
         {
-            // Получаем способ оплаты
-            string paymentMethod = RbCash.IsChecked == true ? "Наличные" : "Банковская карта";
+            string payment = RbCash.IsChecked == true ? "Наличные" : "Банковская карта";
             string comment = TxtComment.Text.Trim();
 
             try
             {
-                using (var context = new BeautySalonEntities())
+                using (var db = new BeautySalonEntities())
                 {
-                    Appointments newAppointment = new Appointments
+                    // Проверка: не записан ли уже клиент на то же время к тому же мастеру
+                    bool exists = db.Appointments.Any(a =>
+                        a.ClientId == CurrentUser.Id &&
+                        a.MasterId == _masterId &&
+                        a.ServiceId == _serviceId &&
+                        a.AppointmentDateTime == _dateTime &&
+                        a.Status != "Cancelled");
+
+                    if (exists)
+                    {
+                        MessageBox.Show("Вы уже записаны на это время к данному мастеру.", "Внимание",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    db.Appointments.Add(new Appointments
                     {
                         ClientId = CurrentUser.Id,
                         MasterId = _masterId,
                         ServiceId = _serviceId,
-                        AppointmentDateTime = _appointmentDateTime,
+                        AppointmentDateTime = _dateTime,
                         Status = "Pending",
-                        Comment = string.IsNullOrEmpty(comment) ? null : comment,
-                        PaymentMethod = paymentMethod
-                    };
-                    context.Appointments.Add(newAppointment);
-                    context.SaveChanges();
+                        PaymentMethod = payment,
+                        Comment = string.IsNullOrEmpty(comment) ? null : comment
+                    });
+
+                    db.SaveChanges();
                 }
 
-                MessageBox.Show("Вы успешно записаны!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Возвращаемся на стартовую страницу
+                MessageBox.Show("Вы успешно записаны!", "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
                 NavigationService.Navigate(new StartPage());
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при записи: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при записи: {ex.Message}");
             }
         }
     }

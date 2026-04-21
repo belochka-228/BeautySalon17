@@ -21,77 +21,68 @@ namespace BeautySalon17.Pages
     /// </summary>
     public partial class ClientAccountPage : Page
     {
-        private List<Appointments> _allAppointments;
+        private List<Appointments> _appointments; // все записи клиента
 
         public ClientAccountPage()
         {
             InitializeComponent();
-            LoadAppointments();
-            LoadOrders();
+            LoadAllData();
         }
 
-        private void LoadAppointments()
+        // Загружаем записи на услуги и заказы товаров
+        private void LoadAllData()
         {
             try
             {
-                using (var context = new BeautySalonEntities())
+                using (var db = new BeautySalonEntities())
                 {
-                    _allAppointments = context.Appointments
-                                              .Include("Services")
-                                              .Include("Users1")   // мастер
-                                              .Where(a => a.ClientId == CurrentUser.Id)
-                                              .OrderByDescending(a => a.AppointmentDateTime)
-                                              .ToList();
-                }
-                DgAppointments.ItemsSource = _allAppointments;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка загрузки записей: {ex.Message}");
-            }
-        }
+                    // Записи (с мастером и услугой)
+                    _appointments = db.Appointments
+                                      .Include("Services")
+                                      .Include("Users1")   // мастер (навигационное свойство)
+                                      .Where(a => a.ClientId == CurrentUser.Id)
+                                      .OrderByDescending(a => a.AppointmentDateTime)
+                                      .ToList();
+                    DgAppointments.ItemsSource = _appointments;
 
-        private void LoadOrders()
-        {
-            try
-            {
-                using (var context = new BeautySalonEntities())
-                {
-                    var orders = context.Orders
-                                        .Where(o => o.ClientId == CurrentUser.Id)
-                                        .OrderByDescending(o => o.OrderDate)
-                                        .ToList();
+                    // Заказы товаров
+                    var orders = db.Orders
+                                   .Where(o => o.ClientId == CurrentUser.Id)
+                                   .OrderByDescending(o => o.OrderDate)
+                                   .ToList();
                     DgOrders.ItemsSource = orders;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки заказов: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}");
             }
         }
 
+        // Фильтр записей по выбранной дате
         private void BtnFilter_Click(object sender, RoutedEventArgs e)
         {
-            if (_allAppointments == null) return;
+            if (_appointments == null) return;
 
             if (DpFilterDate.SelectedDate.HasValue)
             {
-                DateTime selected = DpFilterDate.SelectedDate.Value.Date;
-                var filtered = _allAppointments.Where(a => a.AppointmentDateTime.Date == selected).ToList();
-                DgAppointments.ItemsSource = filtered;
+                DateTime date = DpFilterDate.SelectedDate.Value.Date;
+                DgAppointments.ItemsSource = _appointments.Where(a => a.AppointmentDateTime.Date == date).ToList();
             }
             else
             {
-                DgAppointments.ItemsSource = _allAppointments;
+                DgAppointments.ItemsSource = _appointments;
             }
         }
 
+        // Сброс фильтра
         private void BtnResetFilter_Click(object sender, RoutedEventArgs e)
         {
             DpFilterDate.SelectedDate = null;
-            DgAppointments.ItemsSource = _allAppointments;
+            DgAppointments.ItemsSource = _appointments;
         }
 
+        // Кнопка "Назад"
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (NavigationService.CanGoBack)
