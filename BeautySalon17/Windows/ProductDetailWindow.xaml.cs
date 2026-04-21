@@ -12,7 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.IO;
-using System;
 using BeautySalon17.Pages;
 
 namespace BeautySalon17.Windows

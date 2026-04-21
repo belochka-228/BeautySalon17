@@ -99,7 +99,7 @@ namespace BeautySalon17.Pages
 
                 }
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 TxtError.Text = "Ошибка подключения к базе данных.";
             }

@@ -8,7 +8,37 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="AdminPage">
 
-    <Grid>
-        
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Кнопка "Назад" -->
+            <RowDefinition Height="*"/>
+            <!-- Таблица пользователей -->
+            <RowDefinition Height="Auto"/>
+            <!-- Панель с кнопками -->
+        </Grid.RowDefinitions>
+
+        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+                HorizontalAlignment="Left" Margin="0,0,0,10" Click="BtnBack_Click"/>
+
+        <DataGrid Grid.Row="1" x:Name="DgUsers" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                <DataGridTextColumn Header="Фамилия" Binding="{Binding Surname}" Width="120"/>
+                <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="120"/>
+                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="120"/>
+                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="120"/>
+                <DataGridTextColumn Header="Роль" Binding="{Binding Roles.Name}" Width="100"/>
+                <DataGridTextColumn Header="Активен" Binding="{Binding IsActive}" Width="70"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Добавить" Width="80" Height="30" Click="BtnAddUser_Click"/>
+            <Button Content="Изменить" Width="80" Height="30" Margin="10,0,0,0" Click="BtnEditUser_Click"/>
+            <Button Content="Заморозить" Width="90" Height="30" Margin="10,0,0,0" Click="BtnFreezeUser_Click"/>
+            <Button Content="Разморозить" Width="90" Height="30" Margin="10,0,0,0" Click="BtnUnfreezeUser_Click"/>
+            <Button Content="Сменить роль" Width="100" Height="30" Margin="10,0,0,0" Click="BtnChangeRole_Click"/>
+        </StackPanel>
     </Grid>
 </Page>
