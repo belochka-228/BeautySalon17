@@ -252,7 +252,7 @@ namespace BeautySalon17.Pages
             if (sender is Border border && border.Tag is Services service)
             {
                 _selectedService = service;
-                TxtSelectedService.Text = $"Услуга: {service.Name}";
+                TxtSelectedService.Text = $"Выбранная услуга: {service.Name}";
                 TxtHint.Visibility = Visibility.Collapsed;
                 SelectionPanel.Visibility = Visibility.Visible;
 

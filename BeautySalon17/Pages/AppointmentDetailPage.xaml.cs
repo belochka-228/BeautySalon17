@@ -56,6 +56,7 @@ namespace BeautySalon17.Pages
                     TxtClientPhone.Text = $"Телефон: {_appointment.Users?.Phone ?? "Не указан"}";
                     TxtStatus.Text = $"Статус: {_appointment.Status}";
 
+
                     // Если запись уже выполнена, скрываем кнопку "Завершить"
                     if (_appointment.Status == "Completed")
                         BtnComplete.Visibility = Visibility.Collapsed;

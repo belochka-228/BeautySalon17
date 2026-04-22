@@ -19,29 +19,24 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Кнопка "Назад" -->
-        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" HorizontalAlignment="Left"
+        <Button Grid.Row="0" Content="Назад" Width="80" Height="30" HorizontalAlignment="Left"
                 Click="BtnBack_Click" Margin="0,0,0,20"/>
 
-        <!-- Информация о записи -->
         <TextBlock Grid.Row="1" x:Name="TxtServiceInfo" FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
         <TextBlock Grid.Row="2" x:Name="TxtMasterInfo" FontSize="14" Margin="0,0,0,5"/>
         <TextBlock Grid.Row="3" x:Name="TxtDateTimeInfo" FontSize="14" Margin="0,0,0,20"/>
 
-        <!-- Способ оплаты -->
         <TextBlock Grid.Row="4" Text="Способ оплаты:" FontWeight="Bold" Margin="0,0,0,5"/>
         <StackPanel Grid.Row="5">
             <RadioButton x:Name="RbCash" Content="Наличные" IsChecked="True" Margin="0,0,0,5"/>
             <RadioButton x:Name="RbCard" Content="Банковская карта"/>
         </StackPanel>
 
-        <!-- Комментарий -->
         <StackPanel Grid.Row="6" Margin="0,20,0,0">
             <TextBlock Text="Комментарий (необязательно):" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtComment" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
         </StackPanel>
 
-        <!-- Кнопка "Записаться" -->
         <Button Grid.Row="7" Content="Записаться" Width="120" Height="35" HorizontalAlignment="Right"
                 Margin="0,20,0,0" Click="BtnConfirm_Click"/>
     </Grid>

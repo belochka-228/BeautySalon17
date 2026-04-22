@@ -35,7 +35,7 @@ namespace BeautySalon17.Windows
             // Если корзина пуста, сразу предупреждаем и закрываем окно
             if (_cartItems == null || _cartItems.Count == 0)
             {
-                MessageBox.Show("Ваша корзина пуста. Добавьте товары перед оформлением заказа.",
+                MessageBox.Show("Ваша корзина пуста.",
                                 "Корзина пуста", MessageBoxButton.OK, MessageBoxImage.Information);
                 this.Close();
             }
@@ -50,10 +50,7 @@ namespace BeautySalon17.Windows
             {
                 using (var context = new BeautySalonEntities())
                 {
-                    _cartItems = context.CartItems
-                                        .Include("Products")  // подгружаем товар, чтобы знать цену
-                                        .Where(ci => ci.UserId == Helpers.CurrentUser.Id)
-                                        .ToList();
+                    _cartItems = context.CartItems.Include("Products") .Where(ci => ci.UserId == Helpers.CurrentUser.Id).ToList();
                 }
             }
             catch (Exception ex)
@@ -78,7 +75,7 @@ namespace BeautySalon17.Windows
         /// </summary>
         private void BtnConfirm_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Проверяем, что дата выбрана
+            // Проверяем, что дата выбрана
             if (!DpPickupDate.SelectedDate.HasValue)
             {
                 MessageBox.Show("Пожалуйста, выберите дату получения.", "Ошибка",
@@ -90,7 +87,7 @@ namespace BeautySalon17.Windows
             DateTime today = DateTime.Today;
             DateTime maxDate = today.AddDays(7);
 
-            // 2. Проверяем корректность даты
+            // Проверяем корректность даты
             if (selectedDate < today)
             {
                 MessageBox.Show("Дата получения не может быть раньше сегодняшнего дня.",
@@ -105,7 +102,7 @@ namespace BeautySalon17.Windows
                 return;
             }
 
-            // 3. Проверяем, что корзина не пуста
+            // Проверяем, что корзина не пуста
             if (_cartItems == null || _cartItems.Count == 0)
             {
                 MessageBox.Show("Ваша корзина пуста. Нечего оформлять.",
@@ -114,10 +111,10 @@ namespace BeautySalon17.Windows
                 return;
             }
 
-            // 4. Определяем способ оплаты
+            // Определяем способ оплаты
             string paymentMethod = RbCash.IsChecked == true ? "Наличные" : "Банковская карта";
 
-            // 5. Создаём заказ в базе данных
+            // Создаём заказ в базе данных
             try
             {
                 using (var context = new BeautySalonEntities())

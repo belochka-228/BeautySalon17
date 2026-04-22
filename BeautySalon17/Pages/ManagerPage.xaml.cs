@@ -1,4 +1,5 @@
 ﻿using BeautySalon17.Helpers;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace BeautySalon17.Pages
         {
             using (var context = new BeautySalonEntities())
             {
-                var list = context.Appointments.Include("Services")   .Include("Users")      .Include("Users1")     .ToList();
+                var list = context.Appointments.Include("Services").Include("Users").Include("Users1").ToList();
                 DgAppointments.ItemsSource = list;
             }
         }
@@ -65,12 +66,7 @@ namespace BeautySalon17.Pages
             using (var context = new BeautySalonEntities())
             {
                 // Ищу только среди клиентов (RoleId == 1)
-                var clients = context.Users
-                    .Where(u => u.RoleId == 1)
-                    .AsEnumerable()
-                    .Where(u => (u.Surname + " " + u.Name + " " + u.Patronymic).IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0
-                                || u.Phone.Contains(query))
-                    .ToList();
+                var clients = context.Users.Where(u => u.RoleId == 1).AsEnumerable().Where(u => (u.Surname + " " + u.Name + " " + u.Patronymic).IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 || u.Phone.Contains(query)).ToList();
 
                 if (clients.Count == 1)
                 {
@@ -129,7 +125,7 @@ namespace BeautySalon17.Pages
 
                 // Показываю список услуг с ID для выбора
                 string serviceList = string.Join("\n", services.Select(s => $"{s.Id} - {s.Name}"));
-                string input = Microsoft.VisualBasic.Interaction.InputBox($"Введите ID услуги:\n{serviceList}", "Выбор услуги", "");
+                string input = Interaction.InputBox($"Введите ID услуги:\n{serviceList}", "Выбор услуги", "");
                 if (!int.TryParse(input, out int serviceId))
                 {
                     MessageBox.Show("Неверный ID услуги.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -144,13 +140,8 @@ namespace BeautySalon17.Pages
                 }
 
                 // Выбор мастера, который оказывает эту услугу
-                var masterIds = context.MasterServices
-                    .Where(ms => ms.ServiceId == serviceId)
-                    .Select(ms => ms.MasterId)
-                    .ToList();
-                var masters = context.Users
-                    .Where(u => masterIds.Contains(u.Id) && u.RoleId == 2)
-                    .ToList();
+                var masterIds = context.MasterServices.Where(ms => ms.ServiceId == serviceId).Select(ms => ms.MasterId).ToList();
+                var masters = context.Users.Where(u => masterIds.Contains(u.Id) && u.RoleId == 2).ToList();
 
                 if (masters.Count == 0)
                 {
@@ -159,7 +150,7 @@ namespace BeautySalon17.Pages
                 }
 
                 string masterList = string.Join("\n", masters.Select(m => $"{m.Id} - {m.Surname} {m.Name}"));
-                input = Microsoft.VisualBasic.Interaction.InputBox($"Введите ID мастера:\n{masterList}", "Выбор мастера", "");
+                input = Interaction.InputBox($"Введите ID мастера:\n{masterList}", "Выбор мастера", "");
                 if (!int.TryParse(input, out int masterId))
                 {
                     MessageBox.Show("Неверный ID мастера.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -174,14 +165,14 @@ namespace BeautySalon17.Pages
                 }
 
                 // Ввод даты и времени
-                string dateStr = Microsoft.VisualBasic.Interaction.InputBox("Введите дату (ДД.ММ.ГГГГ):", "Дата", DateTime.Today.ToShortDateString());
+                string dateStr = Interaction.InputBox("Введите дату (ДД.ММ.ГГГГ):", "Дата", DateTime.Today.ToShortDateString());
                 if (!DateTime.TryParse(dateStr, out DateTime date))
                 {
                     MessageBox.Show("Неверный формат даты.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
-                string timeStr = Microsoft.VisualBasic.Interaction.InputBox("Введите время (ЧЧ:ММ):", "Время", "10:00");
+                string timeStr = Interaction.InputBox("Введите время (ЧЧ:ММ):", "Время", "10:00");
                 if (!TimeSpan.TryParse(timeStr, out TimeSpan time))
                 {
                     MessageBox.Show("Неверный формат времени.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -256,10 +247,10 @@ namespace BeautySalon17.Pages
                     return;
                 }
 
-                string dateStr = Microsoft.VisualBasic.Interaction.InputBox("Введите новую дату (ДД.ММ.ГГГГ):", "Перенос", app.AppointmentDateTime.ToShortDateString());
+                string dateStr = Interaction.InputBox("Введите новую дату (ДД.ММ.ГГГГ):", "Перенос", app.AppointmentDateTime.ToShortDateString());
                 if (!DateTime.TryParse(dateStr, out DateTime newDate)) return;
 
-                string timeStr = Microsoft.VisualBasic.Interaction.InputBox("Введите новое время (ЧЧ:ММ):", "Перенос", app.AppointmentDateTime.ToString("HH:mm"));
+                string timeStr = Interaction.InputBox("Введите новое время (ЧЧ:ММ):", "Перенос", app.AppointmentDateTime.ToString("HH:mm"));
                 if (!TimeSpan.TryParse(timeStr, out TimeSpan newTime)) return;
 
                 DateTime newDateTime = newDate.Date.Add(newTime);
@@ -333,13 +324,13 @@ namespace BeautySalon17.Pages
         /// </summary>
         private void BtnAddProduct_Click(object sender, RoutedEventArgs e)
         {
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Название товара:", "Добавить", "");
+            string name = Interaction.InputBox("Название товара:", "Добавить", "");
             if (string.IsNullOrWhiteSpace(name)) return;
 
-            string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Цена:", "Добавить", "100");
+            string priceStr = Interaction.InputBox("Цена:", "Добавить", "100");
             if (!decimal.TryParse(priceStr, out decimal price)) return;
 
-            string discountStr = Microsoft.VisualBasic.Interaction.InputBox("Скидка %:", "Добавить", "0");
+            string discountStr = Interaction.InputBox("Скидка %:", "Добавить", "0");
             if (!int.TryParse(discountStr, out int discount)) return;
 
             using (var context = new BeautySalonEntities())
@@ -368,10 +359,10 @@ namespace BeautySalon17.Pages
         {
             if (DgProducts.SelectedItem is Products prod)
             {
-                string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", prod.Name);
+                string name = Interaction.InputBox("Новое название:", "Изменить", prod.Name);
                 if (string.IsNullOrWhiteSpace(name)) return;
 
-                string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Новая цена:", "Изменить", prod.Price.ToString());
+                string priceStr = Interaction.InputBox("Новая цена:", "Изменить", prod.Price.ToString());
                 if (!decimal.TryParse(priceStr, out decimal price)) return;
 
                 using (var context = new BeautySalonEntities())
@@ -437,7 +428,7 @@ namespace BeautySalon17.Pages
         {
             if (DgProducts.SelectedItem is Products prod)
             {
-                string input = Microsoft.VisualBasic.Interaction.InputBox("Введите новую скидку (%):", "Скидка", prod.Discount.ToString());
+                string input = Interaction.InputBox("Введите новую скидку (%):", "Скидка", prod.Discount.ToString());
                 if (int.TryParse(input, out int newDiscount))
                 {
                     using (var context = new BeautySalonEntities())
@@ -470,7 +461,7 @@ namespace BeautySalon17.Pages
         /// </summary>
         private void BtnAddManufacturer_Click(object sender, RoutedEventArgs e)
         {
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Название производителя:", "Добавить", "");
+            string name = Interaction.InputBox("Название производителя:", "Добавить", "");
             if (!string.IsNullOrWhiteSpace(name))
             {
                 using (var context = new BeautySalonEntities())
@@ -489,7 +480,7 @@ namespace BeautySalon17.Pages
         {
             if (DgManufacturers.SelectedItem is Manufacturers m)
             {
-                string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", m.Name);
+                string name = Interaction.InputBox("Новое название:", "Изменить", m.Name);
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     using (var context = new BeautySalonEntities())
@@ -522,7 +513,7 @@ namespace BeautySalon17.Pages
         /// </summary>
         private void BtnAddProductType_Click(object sender, RoutedEventArgs e)
         {
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Название типа товара:", "Добавить", "");
+            string name = Interaction.InputBox("Название типа товара:", "Добавить", "");
             if (!string.IsNullOrWhiteSpace(name))
             {
                 using (var context = new BeautySalonEntities())
@@ -534,13 +525,13 @@ namespace BeautySalon17.Pages
             }
         }
         /// <summary>
-        /// Изменяю название выбранного типа товара
+        /// Измение название выбранного типа товара
         /// </summary>
         private void BtnEditProductType_Click(object sender, RoutedEventArgs e)
         {
             if (DgProductTypes.SelectedItem is ProductTypes pt)
             {
-                string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", pt.Name);
+                string name = Interaction.InputBox("Новое название:", "Изменить", pt.Name);
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     using (var context = new BeautySalonEntities())
@@ -572,13 +563,13 @@ namespace BeautySalon17.Pages
         /// </summary>
         private void BtnAddService_Click(object sender, RoutedEventArgs e)
         {
-            string name = Microsoft.VisualBasic.Interaction.InputBox("Название услуги:", "Добавить", "");
+            string name = Interaction.InputBox("Название услуги:", "Добавить", "");
             if (string.IsNullOrWhiteSpace(name)) return;
 
-            string durStr = Microsoft.VisualBasic.Interaction.InputBox("Длительность (мин):", "Добавить", "60");
+            string durStr = Interaction.InputBox("Длительность (мин):", "Добавить", "60");
             if (!int.TryParse(durStr, out int dur)) return;
 
-            string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Цена:", "Добавить", "1000");
+            string priceStr = Interaction.InputBox("Цена:", "Добавить", "1000");
             if (!decimal.TryParse(priceStr, out decimal price)) return;
 
             using (var context = new BeautySalonEntities())
@@ -595,13 +586,13 @@ namespace BeautySalon17.Pages
         {
             if (DgServices.SelectedItem is Services srv)
             {
-                string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", srv.Name);
+                string name = Interaction.InputBox("Новое название:", "Изменить", srv.Name);
                 if (string.IsNullOrWhiteSpace(name)) return;
 
-                string durStr = Microsoft.VisualBasic.Interaction.InputBox("Новая длительность (мин):", "Изменить", srv.Duration.ToString());
+                string durStr = Interaction.InputBox("Новая длительность (мин):", "Изменить", srv.Duration.ToString());
                 if (!int.TryParse(durStr, out int dur)) return;
 
-                string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Новая цена:", "Изменить", srv.Price.ToString());
+                string priceStr = Interaction.InputBox("Новая цена:", "Изменить", srv.Price.ToString());
                 if (!decimal.TryParse(priceStr, out decimal price)) return;
 
                 using (var context = new BeautySalonEntities())

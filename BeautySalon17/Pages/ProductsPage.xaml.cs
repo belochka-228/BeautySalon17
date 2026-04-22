@@ -123,9 +123,9 @@ namespace BeautySalon17.Pages
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8)
             };
-            // Если скидка больше 15% – крашу фон в светло-жёлтый
+            // Если скидка больше 15% – крашу фон 
             if (product.Discount > 15)
-                border.Background = new SolidColorBrush(Color.FromRgb(255, 255, 200));
+                border.Background = new SolidColorBrush(Color.FromRgb(237, 255, 255));
             // Сетка из четырёх строк: картинка, название, цена, кнопки
             var grid = new Grid();
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) });

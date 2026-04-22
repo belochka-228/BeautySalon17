@@ -11,17 +11,14 @@
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Назад" -->
             <RowDefinition Height="*"/>
-            <!-- Вкладки -->
         </Grid.RowDefinitions>
 
-        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+        <Button Grid.Row="0" Content="Назад" Width="80" Height="30" 
                 HorizontalAlignment="Left" Margin="0,0,0,10" Click="BtnBack_Click"/>
 
         <TabControl Grid.Row="1">
-            <!-- ========== ЗАПИСИ ========== -->
-            <TabItem Header="📅 Записи">
+            <TabItem Header="Записи">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -29,7 +26,6 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Поиск клиента -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                         <TextBlock Text="Поиск клиента (ФИО/тел):" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox x:Name="TxtClientSearch" Width="200" Height="30" VerticalContentAlignment="Center"/>
@@ -37,7 +33,6 @@
                         <Button Content="Сбросить" Width="70" Height="30" Margin="5,0,0,0" Click="BtnClearClientSearch_Click"/>
                     </StackPanel>
 
-                    <!-- Таблица записей -->
                     <DataGrid Grid.Row="1" x:Name="DgAppointments" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
@@ -49,7 +44,6 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Кнопки действий с записью -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
                         <Button Content="Создать запись" Width="120" Height="30" Click="BtnAddAppointment_Click"/>
                         <Button Content="Отменить запись" Width="120" Height="30" Margin="10,0,0,0" Click="BtnCancelAppointment_Click"/>
@@ -58,8 +52,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- ========== ЗАКАЗЫ ========== -->
-            <TabItem Header="🛍️ Заказы">
+            <TabItem Header="Заказы">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -81,8 +74,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- ========== ТОВАРЫ ========== -->
-            <TabItem Header="💄 Товары">
+            <TabItem Header="Товары">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -106,9 +98,8 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-
-            <!-- ========== ПРОИЗВОДИТЕЛИ ========== -->
-            <TabItem Header="🏭 Производители">
+            
+            <TabItem Header="Производители">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="370*"/>
@@ -132,8 +123,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- ========== ТИПЫ ТОВАРОВ ========== -->
-            <TabItem Header="📦 Типы товаров">
+            <TabItem Header="Типы товаров">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -152,8 +142,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- ========== УСЛУГИ ========== -->
-            <TabItem Header="💅 Услуги">
+            <TabItem Header="Услуги">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>

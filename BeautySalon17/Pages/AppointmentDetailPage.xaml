@@ -11,24 +11,17 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Назад" -->
             <RowDefinition Height="Auto"/>
-            <!-- Заголовок -->
             <RowDefinition Height="Auto"/>
-            <!-- Информация -->
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Завершить" -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Кнопка "Назад" -->
-        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+        <Button Grid.Row="0" Content="Назад" Width="80" Height="30" 
                 HorizontalAlignment="Left" Click="BtnBack_Click" Margin="0,0,0,20"/>
 
-        <!-- Заголовок -->
         <TextBlock Grid.Row="1" Text="Информация о записи" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
 
-        <!-- Блок с данными -->
         <StackPanel Grid.Row="2">
             <TextBlock x:Name="TxtDateTime" FontSize="14" Margin="0,0,0,5"/>
             <TextBlock x:Name="TxtService" FontSize="14" Margin="0,0,0,5"/>
@@ -37,7 +30,6 @@
             <TextBlock x:Name="TxtStatus" FontSize="14" Margin="0,0,0,20"/>
         </StackPanel>
 
-        <!-- Кнопка "Завершить запись" (видна, если статус Pending) -->
         <Button Grid.Row="3" x:Name="BtnComplete" Content="Завершить запись" 
                 Width="150" Height="35" HorizontalAlignment="Left"
                 Click="BtnComplete_Click"/>

@@ -9,7 +9,7 @@
       Title="ClientAccountPage">
 
 
-    <Grid Margin="10">
+      <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -20,7 +20,6 @@
                 Click="BtnBack_Click"/>
 
         <TabControl Grid.Row="1">
-            <!-- Вкладка "Мои записи" (Страница записей) -->
             <TabItem Header="Мои записи">
                 <Grid Margin="5">
                     <Grid.RowDefinitions>
@@ -28,7 +27,6 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Фильтр по дате -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                         <TextBlock Text="Дата:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <DatePicker x:Name="DpFilterDate" Width="120" Height="30"/>
@@ -36,7 +34,6 @@
                         <Button Content="Сбросить" Width="80" Height="30" Margin="5,0,0,0" Click="BtnResetFilter_Click"/>
                     </StackPanel>
 
-                    <!-- Таблица записей (только просмотр) -->
                     <DataGrid Grid.Row="1" x:Name="DgAppointments" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Дата и время" Binding="{Binding AppointmentDateTime, StringFormat='dd.MM.yyyy HH:mm'}" Width="130"/>
@@ -49,7 +46,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- Вкладка "Мои заказы" -->
             <TabItem Header="Мои заказы">
                 <DataGrid x:Name="DgOrders" AutoGenerateColumns="True" IsReadOnly="True"/>
             </TabItem>

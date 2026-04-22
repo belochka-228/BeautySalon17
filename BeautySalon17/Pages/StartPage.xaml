@@ -19,15 +19,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <Button x:Name="BtnLogin" Content="Войти" Width="80" Height="30" Click="BtnLogin_Click" Visibility="Visible"/>
-            <Button x:Name="BtnAccount" Content="Аккаунт" Width="80" Height="30" Click="BtnAccount_Click" Visibility="Collapsed" Margin="10,0,0,0"/>
-            <Button x:Name="BtnLogout" Content="Выход" Width="80" Height="30" Click="BtnLogout_Click" Visibility="Collapsed" Margin="10,0,0,0"/>
+            <Button x:Name="BtnLogin" Content="Войти" Width="120" Height="30" Click="BtnLogin_Click" Visibility="Visible"/>
+            <Button x:Name="BtnAccount" Content="Аккаунт" Width="140" Height="30" Click="BtnAccount_Click" Visibility="Collapsed" Margin="10,0,0,0"/>
+            <Button x:Name="BtnLogout" Content="Выход" Width="90" Height="30" Click="BtnLogout_Click" Visibility="Collapsed" Margin="10,0,0,0"/>
             <Button x:Name="BtnProducts" Content="Товары" Width="80" Height="30" Click="BtnProducts_Click" Margin="10,0,0,0"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,15">
             <TextBlock Text="Фильтр по услуге:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <ComboBox x:Name="CmbFilterService" Width="180" Height="30" Margin="0,0,20,0"
+            <ComboBox x:Name="CmbFilterService" Width="200" Height="30" Margin="0,0,20,0"
                       SelectionChanged="Filter_SelectionChanged"/>
             <TextBlock Text="Фильтр по мастеру:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <ComboBox x:Name="CmbFilterMaster" Width="180" Height="30"
@@ -57,6 +57,7 @@
 
                     <Button x:Name="BtnBook" Content="Записаться" Width="120" Height="35" HorizontalAlignment="Center" IsEnabled="False" Click="BtnBook_Click"/>
                 </StackPanel>
+                
                 <TextBlock x:Name="TxtHint" Text="Выберите услугу слева, чтобы продолжить."
                            FontSize="14" Foreground="Gray" TextWrapping="Wrap"
                            VerticalAlignment="Center" HorizontalAlignment="Center"/>

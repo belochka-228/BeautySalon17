@@ -8,35 +8,28 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="MasterPage">
     
-    <Grid Margin="15">
+        <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Назад" -->
             <RowDefinition Height="*"/>
-            <!-- Вкладки -->
         </Grid.RowDefinitions>
 
-        <!-- Кнопка "Назад" (обязательна на каждой странице) -->
-        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+        <Button Grid.Row="0" Content="Назад" Width="80" Height="30" 
                 HorizontalAlignment="Left" Margin="0,0,0,10"
                 Click="BtnBack_Click"/>
 
-        <!-- Вкладки: Записи и Мои услуги -->
         <TabControl Grid.Row="1">
-            <!-- ==================== ВКЛАДКА "МОИ ЗАПИСИ" ==================== -->
-            <TabItem Header="📅 Мои записи">
+            <TabItem Header="Мои записи">
                 <DataGrid x:Name="DgAppointments" AutoGenerateColumns="False" IsReadOnly="True"
                           RowHeight="35" AlternatingRowBackground="#F5F5F5" MouseDoubleClick="DgAppointments_MouseDoubleClick">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Дата и время" Binding="{Binding AppointmentDateTime, StringFormat='dd.MM.yyyy HH:mm'}" Width="130"/>
                         <DataGridTextColumn Header="Услуга" Binding="{Binding Services.Name}" Width="180"/>
-                        <DataGridTextColumn Header="Клиент" Binding="{Binding Users.Surname}" Width="150"/>
+                        <DataGridTextColumn Header="Клиент" Binding="{Binding Users.Surname}" Width="160"/>
                         <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="100"/>
                         <DataGridTemplateColumn Header="Действие" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <!-- Кнопка "Выполнено" будет показываться для всех, 
-                                         но мы будем управлять её видимостью и действием в коде -->
                                     <Button Content="Выполнено" Tag="{Binding}" Click="BtnComplete_Click"
                                             Padding="8,2" FontSize="11"/>
                                 </DataTemplate>
@@ -46,8 +39,7 @@
                 </DataGrid>
             </TabItem>
             
-            <!-- ==================== ВКЛАДКА "МОИ УСЛУГИ" ==================== -->
-            <TabItem Header="💅 Мои услуги">
+            <TabItem Header="Мои услуги">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -55,19 +47,16 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Доступные услуги -->
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Доступные услуги:" FontWeight="Bold" Margin="0,0,0,5"/>
                         <ListBox x:Name="LbAvailableServices" Height="250" DisplayMemberPath="Name" SelectedValuePath="Id"/>
                     </StackPanel>
 
-                    <!-- Кнопки управления -->
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
-                        <Button Content="Добавить →" Width="100" Height="30" Click="BtnAddService_Click"/>
-                        <Button Content="← Удалить" Width="100" Height="30" Margin="0,10" Click="BtnRemoveService_Click"/>
+                        <Button Content="Добавить" Width="100" Height="30" Click="BtnAddService_Click"/>
+                        <Button Content="Удалить" Width="100" Height="30" Margin="0,10" Click="BtnRemoveService_Click"/>
                     </StackPanel>
 
-                    <!-- Мои услуги -->
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Мои услуги:" FontWeight="Bold" Margin="0,0,0,5"/>
                         <ListBox x:Name="LbMyServices" Height="250" DisplayMemberPath="Name" SelectedValuePath="Id"/>

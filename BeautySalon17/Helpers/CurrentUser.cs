@@ -12,46 +12,15 @@ namespace BeautySalon17.Helpers
     /// </summary>
     public static class CurrentUser
     {
-        /// <summary>
-        /// ID пользователя в базе данных.
-        /// </summary>
         public static int Id { get; set; }
-
-        /// <summary>
-        /// Логин пользователя.
-        /// </summary>
         public static string Login { get; set; }
-
-        /// <summary>
-        /// Фамилия и Имя (можно использовать для отображения).
-        /// </summary>
         public static string FullName { get; set; }
-
-        /// <summary>
-        /// ID роли пользователя:
-        /// 1 - Клиент
-        /// 2 - Мастер
-        /// 3 - Менеджер
-        /// 4 - Администратор
-        /// </summary>
         public static int RoleId { get; set; }
-
-        /// <summary>
-        /// Название роли (для удобства).
-        /// </summary>
         public static string RoleName { get; set; }
-
-        /// <summary>
-        /// Флаг, авторизован ли пользователь в данный момент.
-        /// </summary>
         public static bool IsAuthenticated
         {
             get { return Id != 0; }
         }
-
-        /// <summary>
-        /// Очищает данные текущего пользователя (выход из системы).
-        /// </summary>
         public static void Clear()
         {
             Id = 0;

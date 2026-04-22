@@ -65,13 +65,11 @@ namespace BeautySalon17.Pages
         {
             if (sender is Button btn && btn.Tag is Appointments appointment)
             {
-                // Если запись уже выполнена, ничего не делаю
                 if (appointment.Status == "Completed")
                 {
                     MessageBox.Show("Эта запись уже выполнена.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-
                 // Спрашиваю подтверждение, чтобы случайно не нажать
                 var result = MessageBox.Show($"Отметить запись на {appointment.AppointmentDateTime:dd.MM.yyyy HH:mm} как выполненную?",
                                              "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -108,15 +106,10 @@ namespace BeautySalon17.Pages
                 using (var context = new BeautySalonEntities())
                 {
                     // Получаю ID услуг из таблицы MasterServices
-                    var myServiceIds = context.MasterServices
-                                              .Where(ms => ms.MasterId == CurrentUser.Id)
-                                              .Select(ms => ms.ServiceId)
-                                              .ToList();
+                    var myServiceIds = context.MasterServices.Where(ms => ms.MasterId == CurrentUser.Id).Select(ms => ms.ServiceId).ToList();
 
                     // Загружаю сами услуги по этим ID
-                    var myServices = context.Services
-                                            .Where(s => myServiceIds.Contains(s.Id))
-                                            .ToList();
+                    var myServices = context.Services.Where(s => myServiceIds.Contains(s.Id)).ToList();
                     LbMyServices.ItemsSource = myServices;
                 }
             }

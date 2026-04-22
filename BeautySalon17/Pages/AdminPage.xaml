@@ -11,14 +11,11 @@
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Кнопка "Назад" -->
             <RowDefinition Height="*"/>
-            <!-- Таблица пользователей -->
             <RowDefinition Height="Auto"/>
-            <!-- Панель с кнопками -->
         </Grid.RowDefinitions>
 
-        <Button Grid.Row="0" Content="← Назад" Width="80" Height="30" 
+        <Button Grid.Row="0" Content="Назад" Width="80" Height="30" 
                 HorizontalAlignment="Left" Margin="0,0,0,10" Click="BtnBack_Click"/>
 
         <DataGrid Grid.Row="1" x:Name="DgUsers" AutoGenerateColumns="False" IsReadOnly="True">
