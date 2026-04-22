@@ -2,54 +2,44 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace BeautySalon17.Pages
 {
     /// <summary>
-    /// Логика взаимодействия для MasterPage.xaml
+    /// Личный кабинет мастера
+    /// Здесь видно записи, можно отметить их выполненными и управлять списком услуг
     /// </summary>
     public partial class MasterPage : Page
     {
         public MasterPage()
         {
             InitializeComponent();
-            // Подписываемся на событие Loaded – оно срабатывает каждый раз,
-            // когда страница загружается (в том числе после возврата с другой страницы)
+            // Событие Loaded – оно нужно, чтобы данные обновлялись каждый раз
             this.Loaded += Page_Loaded;
         }
-
-        // ==================== СОБЫТИЕ ЗАГРУЗКИ СТРАНИЦЫ ====================
+        /// <summary>
+        /// Срабатывает каждый раз, когда страница загружается
+        /// Обновляю все списки, чтобы видеть актуальную информацию
+        /// </summary>
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            LoadAppointments();      // обновляем список записей
-            LoadMyServices();        // обновляем список "Мои услуги"
-            LoadAvailableServices(); // обновляем список доступных услуг
+            LoadAppointments();      // обновляю таблицу с записями
+            LoadMyServices();        // обновляю список услуг
+            LoadAvailableServices(); // обновляю список всех доступных услуг
         }
-
-        // ==================== ЗАПИСИ МАСТЕРА ====================
+        /// <summary>
+        /// Загружаю из базы все записи, которые назначены на меня (текущего мастера)
+        /// Подгружаю связанные услугу и клиента, чтобы показать их в таблице
+        /// </summary>
         private void LoadAppointments()
         {
             try
             {
                 using (var context = new BeautySalonEntities())
                 {
-                    var appointments = context.Appointments
-                                              .Include("Services")   // услуга
-                                              .Include("Users")      // клиент
-                                              .Where(a => a.MasterId == CurrentUser.Id)
-                                              .OrderByDescending(a => a.AppointmentDateTime)
-                                              .ToList();
+                    var appointments = context.Appointments.Include("Services").Include("Users").Where(a => a.MasterId == CurrentUser.Id).OrderByDescending(a => a.AppointmentDateTime) .ToList();
                     DgAppointments.ItemsSource = appointments;
                 }
             }
@@ -58,27 +48,31 @@ namespace BeautySalon17.Pages
                 MessageBox.Show($"Ошибка загрузки записей: {ex.Message}");
             }
         }
-
-        // Обработчик двойного клика по строке таблицы – открывает страницу деталей записи
+        /// <summary>
+        /// Обработчик двойного клика по строке таблицы записей
+        /// Открываю страницу с подробной информацией о выбранной записи
+        /// </summary>
         private void DgAppointments_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (DgAppointments.SelectedItem is Appointments appointment)
-            {
                 NavigationService.Navigate(new AppointmentDetailPage(appointment.Id));
-            }
         }
-
-        // Кнопка "Выполнено" в таблице записей
+        /// <summary>
+        /// Кнопка "Выполнено" в таблице записей
+        /// Меняю статус записи на "Completed", если клиент пришёл и услуга оказана
+        /// </summary>
         private void BtnComplete_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is Appointments appointment)
             {
+                // Если запись уже выполнена, ничего не делаю
                 if (appointment.Status == "Completed")
                 {
                     MessageBox.Show("Эта запись уже выполнена.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
+                // Спрашиваю подтверждение, чтобы случайно не нажать
                 var result = MessageBox.Show($"Отметить запись на {appointment.AppointmentDateTime:dd.MM.yyyy HH:mm} как выполненную?",
                                              "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
@@ -94,7 +88,7 @@ namespace BeautySalon17.Pages
                                 context.SaveChanges();
                             }
                         }
-                        LoadAppointments(); // обновляем таблицу
+                        LoadAppointments(); // перезагружаю таблицу, чтобы статус обновился
                         MessageBox.Show("Статус записи обновлён.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     catch (Exception ex)
@@ -104,19 +98,22 @@ namespace BeautySalon17.Pages
                 }
             }
         }
-
-        // ==================== УПРАВЛЕНИЕ УСЛУГАМИ МАСТЕРА ====================
+        /// <summary>
+        /// Загружаю список услуг, которые уже оказываются
+        /// </summary>
         private void LoadMyServices()
         {
             try
             {
                 using (var context = new BeautySalonEntities())
                 {
+                    // Получаю ID услуг из таблицы MasterServices
                     var myServiceIds = context.MasterServices
                                               .Where(ms => ms.MasterId == CurrentUser.Id)
                                               .Select(ms => ms.ServiceId)
                                               .ToList();
 
+                    // Загружаю сами услуги по этим ID
                     var myServices = context.Services
                                             .Where(s => myServiceIds.Contains(s.Id))
                                             .ToList();
@@ -128,7 +125,9 @@ namespace BeautySalon17.Pages
                 MessageBox.Show($"Ошибка загрузки моих услуг: {ex.Message}");
             }
         }
-
+        /// <summary>
+        /// Загружаю список вообще всех услуг из базы (для левого списка "Доступные услуги")
+        /// </summary>
         private void LoadAvailableServices()
         {
             try
@@ -144,7 +143,9 @@ namespace BeautySalon17.Pages
                 MessageBox.Show($"Ошибка загрузки доступных услуг: {ex.Message}");
             }
         }
-
+        /// <summary>
+        /// Кнопка "Добавить" – добавляю выбранную в левом списке услугу в список
+        /// </summary>
         private void BtnAddService_Click(object sender, RoutedEventArgs e)
         {
             if (LbAvailableServices.SelectedItem is Services selectedService)
@@ -153,6 +154,7 @@ namespace BeautySalon17.Pages
                 {
                     using (var context = new BeautySalonEntities())
                     {
+                        // Проверяю, нет ли уже такой услуги меня
                         bool exists = context.MasterServices.Any(ms => ms.MasterId == CurrentUser.Id && ms.ServiceId == selectedService.Id);
                         if (!exists)
                         {
@@ -162,7 +164,7 @@ namespace BeautySalon17.Pages
                                 ServiceId = selectedService.Id
                             });
                             context.SaveChanges();
-                            LoadMyServices();
+                            LoadMyServices(); // обновляю правый список
                         }
                         else
                         {
@@ -180,7 +182,9 @@ namespace BeautySalon17.Pages
                 MessageBox.Show("Выберите услугу из списка доступных.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
+        /// <summary>
+        /// Кнопка "Удалить" – убираю выбранную в правом списке услугу из своего списка
+        /// </summary>
         private void BtnRemoveService_Click(object sender, RoutedEventArgs e)
         {
             if (LbMyServices.SelectedItem is Services selectedService)
@@ -213,8 +217,9 @@ namespace BeautySalon17.Pages
                 MessageBox.Show("Выберите услугу из списка 'Мои услуги'.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
-        // ==================== КНОПКА "НАЗАД" ====================
+        /// <summary>
+        /// Кнопка "Назад"
+        /// </summary>
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (NavigationService.CanGoBack)

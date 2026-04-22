@@ -20,28 +20,22 @@
 
             <TextBox x:Name="TxtSearch" Width="200" Height="30" Margin="30,0,0,0" VerticalContentAlignment="Center" />
             <Button Content="🔍" Width="40" Height="30" Click="BtnSearch_Click" Margin="5,0,0,0"/>
-
-            <Button Content="Корзинка" Width="100" Height="30" HorizontalAlignment="Right" Click="BtnCart_Click" Margin="315,0,0,0"/>
+            <Button Content="Корзинка" Width="100" Height="30" HorizontalAlignment="Right" Click="BtnCart_Click" Margin="320,0,0,0"/>
         </StackPanel>
-        
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Visible">
-            <!-- Фильтр по типу товара -->
-            <TextBlock Text="Тип:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <ComboBox x:Name="CmbProductType" Width="120" Height="30" Margin="0,0,10,0"
-              SelectionChanged="Filter_SelectionChanged"/>
 
-            <!-- Фильтр по производителю -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Visible">
+            <TextBlock Text="Тип:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <ComboBox x:Name="CmbProductType" Width="120" Height="30" Margin="0,0,10,0" SelectionChanged="Filter_SelectionChanged"/>
             <TextBlock Text="Производитель:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <ComboBox x:Name="CmbManufacturer" Width="120" Height="30"
               SelectionChanged="Filter_SelectionChanged"/>
 
-            <TextBlock Text="Сортировка:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+            <TextBlock Text="Сортировка по рейтингу:" VerticalAlignment="Center" Margin="10,0,5,0"/>
             <ComboBox x:Name="CmbSorting" Width="120" Height="30" SelectedIndex="1" SelectionChanged="Sorting_SelectionChanged">
                 <ComboBoxItem Content="возрастание" Tag="asc"/>
                 <ComboBoxItem Content="убывание" Tag="desc"/>
             </ComboBox>
             
-            <!-- Кнопка "Сбросить фильтры" -->
             <Button Content="Сбросить" Width="80" Height="30" Margin="20,0,0,0" Click="BtnResetFilters_Click"/>
         </StackPanel>
 

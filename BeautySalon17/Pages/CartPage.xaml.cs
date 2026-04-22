@@ -11,41 +11,55 @@ using System.Windows.Media.Imaging;
 
 namespace BeautySalon17.Pages
 {
+    /// <summary>
+    /// Страница корзины
+    /// </summary>
     public partial class CartPage : Page
     {
-        private List<CartItems> _cartItems; // список товаров в корзине текущего юзера
+        // Список позиций в корзине для текущего пользователя
+        private List<CartItems> _cartItems;
+
+        /// <summary>
+        /// Конструктор. При создании страницы сразу загружаю содержимое корзины из базы
+        /// </summary>
         public CartPage()
         {
             InitializeComponent();
-            LoadCartItems(); // при открытии страницы сразу грузим корзину
+            LoadCartItems();   // гружу товары и отображаю их
         }
-        // Загрузка позиций корзины из БД
+        /// <summary>
+        /// Загружаю из базы все позиции корзины для текущего авторизованного пользователя
+        /// Подгружаю связанный товар (Products), чтобы получить его название, цену и картинку
+        /// После загрузки отрисовываю карточки и обновляю итоговую сумму
+        /// </summary>
         private void LoadCartItems()
         {
             try
             {
                 using (var db = new BeautySalonEntities())
                 {
-                    _cartItems = db.CartItems.Include("Products")
-                                             .Where(c => c.UserId == CurrentUser.Id)
-                                             .ToList();
+                    // Include("Products") нужен, чтобы вместе с позицией корзины загрузился сам товар
+                    _cartItems = db.CartItems.Include("Products").Where(c => c.UserId == CurrentUser.Id).ToList();
                 }
-                DisplayCartItems();
-                UpdateTotalPrice();
+                DisplayCartItems();   // создаю визуальные карточки для каждого товара
+                UpdateTotalPrice();   // пересчитываю и показываю итоговую сумму
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка загрузки корзины: {ex.Message}");
             }
         }
-        // Отрисовка карточек товаров в WrapPanel
+        /// <summary>
+        /// Очищаю панель с товарами и заново заполняю её карточками из списка _cartItems
+        /// Если корзина пуста – показываю сообщение и блокирую кнопку оформления заказа
+        /// </summary>
         private void DisplayCartItems()
         {
             CartItemsWrapPanel.Children.Clear();
 
+            // Если список пуст или ещё не загружен
             if (_cartItems == null || !_cartItems.Any())
             {
-                // если пусто – показываем заглушку
                 CartItemsWrapPanel.Children.Add(new TextBlock
                 {
                     Text = "Корзина пуста",
@@ -53,21 +67,29 @@ namespace BeautySalon17.Pages
                     Foreground = Brushes.Gray,
                     Margin = new Thickness(20)
                 });
-                BtnCheckout.IsEnabled = false;
+                BtnCheckout.IsEnabled = false;   // нельзя оформить пустой заказ
                 return;
             }
 
+            // Если есть товары – активирую кнопку оформления и рисую карточки
             BtnCheckout.IsEnabled = true;
             foreach (var item in _cartItems)
                 CartItemsWrapPanel.Children.Add(CreateCartItemCard(item));
         }
-        // Создание UI-карточки для одного элемента корзины
+
+        /// <summary>
+        /// Создаю визуальную карточку для одной позиции корзины
+        /// Внутри: картинка, название, цена за штуку, управление количеством и кнопка удаления
+        /// </summary>
+        /// <param name="item">Позиция корзины (содержит товар и количество)</param>
+        /// <returns>Готовый элемент управления (Border) с карточкой</returns>
         private FrameworkElement CreateCartItemCard(CartItems item)
         {
-            var product = item.Products;
+            var product = item.Products;   // сам товар
+            // Цена за одну штуку с учётом скидки
             decimal unitPrice = product.Price * (1 - product.Discount / 100m);
 
-            // Основная рамка карточки
+            // Основная рамка с закруглёнными углами
             var border = new Border
             {
                 Width = 200,
@@ -78,22 +100,26 @@ namespace BeautySalon17.Pages
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8)
             };
+
+            // Сетка на 5 строк: картинка, название, цена, количество, кнопка удаления
             var grid = new Grid();
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) }); // картинка
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // название
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // цена
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // кол-во
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // кнопка удалить
-            // Изображение товара
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // цена за шт.
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // управление кол-вом
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });    // кнопка "Удалить"
+
+            // Картинка товара
             var img = new Image
             {
                 Stretch = Stretch.Uniform,
                 Margin = new Thickness(5),
-                Source = LoadProductImage(product.ImagePath)
+                Source = LoadProductImage(product.ImagePath)   // загружаю картинку с диска
             };
             Grid.SetRow(img, 0);
             grid.Children.Add(img);
-            // Название
+
+            // Название товара
             var txtName = new TextBlock
             {
                 Text = product.Name,
@@ -104,7 +130,8 @@ namespace BeautySalon17.Pages
             };
             Grid.SetRow(txtName, 1);
             grid.Children.Add(txtName);
-            // Цена за штуку
+
+            // Цена за одну штуку
             var txtPrice = new TextBlock
             {
                 Text = $"{unitPrice:F2} руб.",
@@ -115,13 +142,16 @@ namespace BeautySalon17.Pages
             };
             Grid.SetRow(txtPrice, 2);
             grid.Children.Add(txtPrice);
-            // Панель управления количеством
+
+            // Панель управления количеством (кнопки "-" и "+", число) 
             var qtyPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 5, 0, 0)
             };
+
+            // Кнопка "минус" – активна только если количество > 1
             Button btnMinus = new Button
             {
                 Content = "−",
@@ -132,6 +162,7 @@ namespace BeautySalon17.Pages
             };
             btnMinus.Click += (s, e) => ChangeQuantity(item.Id, -1);
 
+            // Текстовое поле с текущим количеством
             TextBlock txtQty = new TextBlock
             {
                 Text = item.Quantity.ToString(),
@@ -141,6 +172,8 @@ namespace BeautySalon17.Pages
                 Margin = new Thickness(5, 0, 5, 0),
                 FontWeight = FontWeights.Bold
             };
+
+            // Кнопка "плюс"
             Button btnPlus = new Button
             {
                 Content = "+",
@@ -150,27 +183,37 @@ namespace BeautySalon17.Pages
             };
             btnPlus.Click += (s, e) => ChangeQuantity(item.Id, 1);
 
+            // Собираю панель
             qtyPanel.Children.Add(btnMinus);
             qtyPanel.Children.Add(txtQty);
             qtyPanel.Children.Add(btnPlus);
+
             Grid.SetRow(qtyPanel, 3);
             grid.Children.Add(qtyPanel);
-            // Кнопка удаления
+
+            // Кнопка удаления товара из корзины
             Button btnDelete = new Button
             {
-                Content = "🗑️ Удалить",
+                Content = "Удалить",
                 Height = 30,
                 Margin = new Thickness(10, 5, 10, 10),
                 Tag = item.Id
             };
             btnDelete.Click += BtnDelete_Click;
+
             Grid.SetRow(btnDelete, 4);
             grid.Children.Add(btnDelete);
 
+            // Вкладываю сетку в рамку
             border.Child = grid;
             return border;
         }
-        // Изменение количества (+1 / -1)
+        /// <summary>
+        /// Изменяю количество конкретного товара в корзине
+        /// После изменения перезагружаю всю корзину, чтобы обновился интерфейс
+        /// </summary>
+        /// <param name="cartItemId">ID позиции в корзине (таблица CartItems)</param>
+        /// <param name="delta">На сколько изменить (+1 или -1)</param>
         private void ChangeQuantity(int cartItemId, int delta)
         {
             try
@@ -186,21 +229,26 @@ namespace BeautySalon17.Pages
                             cartItem.Quantity = newQty;
                             db.SaveChanges();
                         }
+                        // Если количество стало 0 – удаляем через отдельный метод
                     }
                 }
-                LoadCartItems(); // перерисовываем
+                LoadCartItems();   // перерисовываю корзину с обновлёнными данными
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка изменения количества: {ex.Message}");
             }
         }
-        // Удаление позиции из корзины
+
+        /// <summary>
+        /// Удаляю позицию из корзины после подтверждения пользователем
+        /// </summary>
         private void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (!(sender is Button btn)) return;
-            int id = (int)btn.Tag;
+            int id = (int)btn.Tag;   // ID позиции в корзине
 
+            // Спрашиваю подтверждение, чтобы случайно не удалить
             if (MessageBox.Show("Удалить товар из корзины?", "Подтверждение",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
@@ -215,7 +263,7 @@ namespace BeautySalon17.Pages
                             db.SaveChanges();
                         }
                     }
-                    LoadCartItems();
+                    LoadCartItems();   // перерисовываю корзину
                 }
                 catch (Exception ex)
                 {
@@ -223,7 +271,10 @@ namespace BeautySalon17.Pages
                 }
             }
         }
-        // Пересчёт итоговой суммы
+        /// <summary>
+        /// Пересчитываю общую стоимость всех товаров в корзине с учётом количества и скидок
+        /// Результат вывожу в текстовое поле TxtTotalPrice
+        /// </summary>
         private void UpdateTotalPrice()
         {
             if (_cartItems == null || !_cartItems.Any())
@@ -235,12 +286,16 @@ namespace BeautySalon17.Pages
             decimal total = _cartItems.Sum(item =>
             {
                 var p = item.Products;
+                // Цена со скидкой * количество
                 return p.Price * (1 - p.Discount / 100m) * item.Quantity;
             });
 
             TxtTotalPrice.Text = $"{total:F2} руб.";
         }
-        // Оформление заказа – открывает окно OrderWindow
+        /// <summary>
+        /// Открываю окно оформления заказа (OrderWindow)
+        /// Если заказ успешно создан (окно вернуло true), перезагружаю корзину
+        /// </summary>
         private void BtnCheckout_Click(object sender, RoutedEventArgs e)
         {
             if (_cartItems == null || !_cartItems.Any())
@@ -251,10 +306,14 @@ namespace BeautySalon17.Pages
 
             var orderWindow = new OrderWindow();
             orderWindow.Owner = Window.GetWindow(this);
+            // ShowDialog() возвращает true, если заказ оформлен
             if (orderWindow.ShowDialog() == true)
-                LoadCartItems(); // после успешного заказа обновляем корзину
+                LoadCartItems();   // корзина очистилась – обновляю страницу
         }
-        // Загрузка картинки товара из файла
+        /// <summary>
+        /// Загружаю картинку товара с диска по относительному пути из базы
+        /// Если файл не найден – возвращаю null (картинка не отобразится)
+        /// </summary>
         private BitmapImage LoadProductImage(string imagePath)
         {
             if (string.IsNullOrEmpty(imagePath)) return null;
@@ -271,10 +330,12 @@ namespace BeautySalon17.Pages
                     return bmp;
                 }
             }
-            catch { /* если не загрузилось – вернём null */ }
+            catch { /* если что-то пошло не так – просто верну null */ }
             return null;
         }
-        // Кнопка "Назад"
+        /// <summary>
+        /// Кнопка "Назад" 
+        /// </summary>
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (NavigationService.CanGoBack)

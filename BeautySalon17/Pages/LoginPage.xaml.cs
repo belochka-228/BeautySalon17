@@ -26,8 +26,8 @@ namespace BeautySalon17.Pages
             InitializeComponent();
         }
         /// <summary>
-        /// Обработчик кнопки "Назад". Возвращает пользователя на предыдущую страницу.
-        /// Если истории нет — переходит на стартовую страницу.
+        /// Обработчик кнопки "Назад". Возвращает пользователя на предыдущую страницу
+        /// Если истории нет — переходит на стартовую страницу
         /// </summary>
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
@@ -39,12 +39,12 @@ namespace BeautySalon17.Pages
             }
             else
             {
-                // Если истории нет (например, открыли LoginPage напрямую), идём на стартовую
+                // Если истории нет, идём на стартовую
                 NavigationService.Navigate(new StartPage());
             }
         }
         /// <summary>
-        /// Обработчик кнопки "Войти". Проверяет логин и пароль в базе данных.
+        /// Обработчик кнопки "Войти". Проверяет логин и пароль в базе данных
         /// </summary>
         private void BtnLogin_Click(object sender, RoutedEventArgs e)
         {

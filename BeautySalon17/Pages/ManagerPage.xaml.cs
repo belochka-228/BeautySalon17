@@ -1,55 +1,58 @@
-﻿using System;
+﻿using BeautySalon17.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace BeautySalon17.Pages
 {
     /// <summary>
-    /// Логика взаимодействия для ManagerPage.xaml
+    /// Личный кабинет менеджера.
     /// </summary>
     public partial class ManagerPage : Page
     {
-        // Для временного хранения найденного клиента при создании записи
+        // Здесь временно храню найденного клиента, чтобы потом создать для него запись
         private Users _selectedClient;
 
+        /// <summary>
+        /// Конструктор страницы. Подписываюсь на событие Loaded, чтобы данные обновлялись каждый раз при показе страницы
+        /// </summary>
         public ManagerPage()
         {
             InitializeComponent();
             this.Loaded += Page_Loaded;
         }
 
+        /// <summary>
+        /// Срабатывает каждый раз при загрузке страницы
+        /// </summary>
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            LoadAppointments();
-            LoadOrders();
-            LoadProducts();
-            LoadManufacturers();
-            LoadProductTypes();
-            LoadServices();
+            LoadAppointments();   // обновляю список записей
+            LoadOrders();         // обновляю список заказов
+            LoadProducts();       // обновляю список товаров
+            LoadManufacturers();  // обновляю список производителей
+            LoadProductTypes();   // обновляю список типов товаров
+            LoadServices();       // обновляю список услуг
         }
-
-        // ==================== ЗАПИСИ ====================
+        /// <summary>
+        /// Загружаю все записи из базы данных
+        /// Подгружаю связанные данные: услугу (Services), клиента (Users) и мастера (Users1)
+        /// </summary>
         private void LoadAppointments()
         {
             using (var context = new BeautySalonEntities())
             {
-                var list = context.Appointments.Include("Services").Include("Users").Include("Users1").ToList();
+                var list = context.Appointments.Include("Services")   .Include("Users")      .Include("Users1")     .ToList();
                 DgAppointments.ItemsSource = list;
             }
         }
 
-        // Поиск клиента
+        /// <summary>
+        /// Ищу клиента по ФИО или номеру телефона
+        /// Результат сохраняю в поле _selectedClient, чтобы потом использовать при создании записи
+        /// </summary>
         private void BtnSearchClient_Click(object sender, RoutedEventArgs e)
         {
             string query = TxtClientSearch.Text.Trim();
@@ -61,52 +64,62 @@ namespace BeautySalon17.Pages
 
             using (var context = new BeautySalonEntities())
             {
+                // Ищу только среди клиентов (RoleId == 1)
                 var clients = context.Users
-                    .Where(u => u.RoleId == 1) // только клиенты
+                    .Where(u => u.RoleId == 1)
                     .AsEnumerable()
                     .Where(u => (u.Surname + " " + u.Name + " " + u.Patronymic).IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0
-                             || u.Phone.Contains(query))
+                                || u.Phone.Contains(query))
                     .ToList();
 
                 if (clients.Count == 1)
                 {
+                    // Нашёлся ровно один клиент, отлично
                     _selectedClient = clients[0];
                     MessageBox.Show($"Выбран клиент: {_selectedClient.Surname} {_selectedClient.Name} {_selectedClient.Patronymic}\nТелефон: {_selectedClient.Phone}",
                                     "Клиент найден", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else if (clients.Count > 1)
                 {
-                    // Для простоты выберем первого
+                    // Нашлось несколько беру первого
                     _selectedClient = clients[0];
                     MessageBox.Show($"Найдено несколько клиентов. Выбран первый:\n{_selectedClient.Surname} {_selectedClient.Name}\nТелефон: {_selectedClient.Phone}",
                                     "Клиент найден", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
+                    // Никого не нашли
                     _selectedClient = null;
                     MessageBox.Show("Клиент не найден.", "Поиск", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
 
+        /// <summary>
+        /// Очищаю поле поиска клиента и сбрасываю выбранного клиента
+        /// </summary>
         private void BtnClearClientSearch_Click(object sender, RoutedEventArgs e)
         {
             TxtClientSearch.Text = "";
             _selectedClient = null;
         }
 
-        // Создание записи менеджером (упрощённо – через InputBox)
+        /// <summary>
+        /// Создаю новую запись для найденного клиента
+        /// Пошагово через простые окна ввода (InputBox) спрашиваю: услугу, мастера, дату и время. После этого сохраняю запись в базу
+        /// </summary>
         private void BtnAddAppointment_Click(object sender, RoutedEventArgs e)
         {
+            // Сначала проверяю, что клиент найден
             if (_selectedClient == null)
             {
                 MessageBox.Show("Сначала найдите и выберите клиента.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // Выбор услуги
             using (var context = new BeautySalonEntities())
             {
+                // Выбор услуги
                 var services = context.Services.ToList();
                 if (services.Count == 0)
                 {
@@ -114,7 +127,7 @@ namespace BeautySalon17.Pages
                     return;
                 }
 
-                // Простой выбор услуги – через строку с ID
+                // Показываю список услуг с ID для выбора
                 string serviceList = string.Join("\n", services.Select(s => $"{s.Id} - {s.Name}"));
                 string input = Microsoft.VisualBasic.Interaction.InputBox($"Введите ID услуги:\n{serviceList}", "Выбор услуги", "");
                 if (!int.TryParse(input, out int serviceId))
@@ -131,8 +144,14 @@ namespace BeautySalon17.Pages
                 }
 
                 // Выбор мастера, который оказывает эту услугу
-                var masterIds = context.MasterServices.Where(ms => ms.ServiceId == serviceId).Select(ms => ms.MasterId).ToList();
-                var masters = context.Users.Where(u => masterIds.Contains(u.Id) && u.RoleId == 2).ToList();
+                var masterIds = context.MasterServices
+                    .Where(ms => ms.ServiceId == serviceId)
+                    .Select(ms => ms.MasterId)
+                    .ToList();
+                var masters = context.Users
+                    .Where(u => masterIds.Contains(u.Id) && u.RoleId == 2)
+                    .ToList();
+
                 if (masters.Count == 0)
                 {
                     MessageBox.Show("Нет мастеров, оказывающих эту услугу.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -154,7 +173,7 @@ namespace BeautySalon17.Pages
                     return;
                 }
 
-                // Выбор даты и времени (упрощённо)
+                // Ввод даты и времени
                 string dateStr = Microsoft.VisualBasic.Interaction.InputBox("Введите дату (ДД.ММ.ГГГГ):", "Дата", DateTime.Today.ToShortDateString());
                 if (!DateTime.TryParse(dateStr, out DateTime date))
                 {
@@ -171,7 +190,7 @@ namespace BeautySalon17.Pages
 
                 DateTime appointmentDateTime = date.Date.Add(time);
 
-                // Создаём запись
+                // Создаю запись в базе
                 var newAppointment = new Appointments
                 {
                     ClientId = _selectedClient.Id,
@@ -179,19 +198,23 @@ namespace BeautySalon17.Pages
                     ServiceId = serviceId,
                     AppointmentDateTime = appointmentDateTime,
                     Status = "Pending",
-                    PaymentMethod = "Наличные" // по умолчанию
+                    PaymentMethod = "Наличные"   // способ оплаты по умолчанию
                 };
 
                 context.Appointments.Add(newAppointment);
                 context.SaveChanges();
 
                 MessageBox.Show("Запись успешно создана!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                LoadAppointments();
-                _selectedClient = null;
-                TxtClientSearch.Text = "";
+                LoadAppointments();                  // обновляю таблицу записей
+                _selectedClient = null;              // сбрасываю выбранного клиента
+                TxtClientSearch.Text = "";           // очищаю поле поиска
             }
         }
 
+        /// <summary>
+        /// Отменяю выбранную запись: меняю её статус на "Cancelled"
+        /// Выполненные записи отменять нельзя
+        /// </summary>
         private void BtnCancelAppointment_Click(object sender, RoutedEventArgs e)
         {
             if (DgAppointments.SelectedItem is Appointments app)
@@ -201,6 +224,7 @@ namespace BeautySalon17.Pages
                     MessageBox.Show("Выполненную запись нельзя отменить.", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
+
                 if (MessageBox.Show("Отменить эту запись?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     using (var context = new BeautySalonEntities())
@@ -209,12 +233,19 @@ namespace BeautySalon17.Pages
                         if (dbApp != null) dbApp.Status = "Cancelled";
                         context.SaveChanges();
                     }
-                    LoadAppointments();
+                    LoadAppointments();   // обновляю таблицу
                 }
             }
-            else MessageBox.Show("Выберите запись.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+            {
+                MessageBox.Show("Выберите запись.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
+        /// <summary>
+        /// Переношу выбранную запись на другую дату и врем.
+        /// Работает только для записей со статусом "Pending"
+        /// </summary>
         private void BtnMoveAppointment_Click(object sender, RoutedEventArgs e)
         {
             if (DgAppointments.SelectedItem is Appointments app)
@@ -242,10 +273,14 @@ namespace BeautySalon17.Pages
                 LoadAppointments();
                 MessageBox.Show("Запись перенесена.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            else MessageBox.Show("Выберите запись.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+            {
+                MessageBox.Show("Выберите запись.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
-
-        // ==================== ЗАКАЗЫ ====================
+        /// <summary>
+        /// Загружаю все заказы из базы вместе с данными клиентов
+        /// </summary>
         private void LoadOrders()
         {
             using (var context = new BeautySalonEntities())
@@ -255,6 +290,9 @@ namespace BeautySalon17.Pages
             }
         }
 
+        /// <summary>
+        /// Отмечаю выбранный заказ как выданный (меняю статус на "Completed")
+        /// </summary>
         private void BtnCompleteOrder_Click(object sender, RoutedEventArgs e)
         {
             if (DgOrders.SelectedItem is Orders order)
@@ -264,6 +302,7 @@ namespace BeautySalon17.Pages
                     MessageBox.Show("Заказ уже выдан.");
                     return;
                 }
+
                 using (var context = new BeautySalonEntities())
                 {
                     var dbOrder = context.Orders.Find(order.Id);
@@ -273,10 +312,14 @@ namespace BeautySalon17.Pages
                 LoadOrders();
                 MessageBox.Show("Заказ отмечен как выданный.", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            else MessageBox.Show("Выберите заказ.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+            {
+                MessageBox.Show("Выберите заказ.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
-
-        // ==================== ТОВАРЫ ====================
+        /// <summary>
+        /// Загружаю список всех товаров из базы
+        /// </summary>
         private void LoadProducts()
         {
             using (var context = new BeautySalonEntities())
@@ -285,19 +328,22 @@ namespace BeautySalon17.Pages
             }
         }
 
+        /// <summary>
+        /// Добавляю новый товар. Для простоты ManufacturerId и ProductTypeId ставлю в 1
+        /// </summary>
         private void BtnAddProduct_Click(object sender, RoutedEventArgs e)
         {
-            // Простое добавление через InputBox
             string name = Microsoft.VisualBasic.Interaction.InputBox("Название товара:", "Добавить", "");
             if (string.IsNullOrWhiteSpace(name)) return;
+
             string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Цена:", "Добавить", "100");
             if (!decimal.TryParse(priceStr, out decimal price)) return;
+
             string discountStr = Microsoft.VisualBasic.Interaction.InputBox("Скидка %:", "Добавить", "0");
             if (!int.TryParse(discountStr, out int discount)) return;
 
             using (var context = new BeautySalonEntities())
             {
-                // Для простоты – ManufacturerId = 1, ProductTypeId = 1, IsActive = true
                 var product = new Products
                 {
                     Name = name,
@@ -315,12 +361,16 @@ namespace BeautySalon17.Pages
             LoadProducts();
         }
 
+        /// <summary>
+        /// Изменяю название и цену выбранного товара
+        /// </summary>
         private void BtnEditProduct_Click(object sender, RoutedEventArgs e)
         {
             if (DgProducts.SelectedItem is Products prod)
             {
                 string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", prod.Name);
                 if (string.IsNullOrWhiteSpace(name)) return;
+
                 string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Новая цена:", "Изменить", prod.Price.ToString());
                 if (!decimal.TryParse(priceStr, out decimal price)) return;
 
@@ -336,19 +386,32 @@ namespace BeautySalon17.Pages
                 }
                 LoadProducts();
             }
-            else MessageBox.Show("Выберите товар.");
+            else
+            {
+                MessageBox.Show("Выберите товар.");
+            }
         }
 
+        /// <summary>
+        /// Замораживаю товар – он перестаёт отображаться в каталоге (IsActive = false)
+        /// </summary>
         private void BtnFreezeProduct_Click(object sender, RoutedEventArgs e)
         {
             SetProductActive(false);
         }
 
+        /// <summary>
+        /// Размораживаю товар – он снова появляется в каталоге (IsActive = true)
+        /// </summary>
         private void BtnUnfreezeProduct_Click(object sender, RoutedEventArgs e)
         {
             SetProductActive(true);
         }
 
+        /// <summary>
+        /// Общий метод для заморозки / разморозки товара
+        /// </summary>
+        /// <param name="active">true – разморозить, false – заморозить</param>
         private void SetProductActive(bool active)
         {
             if (DgProducts.SelectedItem is Products prod)
@@ -361,9 +424,15 @@ namespace BeautySalon17.Pages
                 }
                 LoadProducts();
             }
-            else MessageBox.Show("Выберите товар.");
+            else
+            {
+                MessageBox.Show("Выберите товар.");
+            }
         }
 
+        /// <summary>
+        /// Меняю процент скидки на выбранный товар
+        /// </summary>
         private void BtnDiscountProduct_Click(object sender, RoutedEventArgs e)
         {
             if (DgProducts.SelectedItem is Products prod)
@@ -380,10 +449,14 @@ namespace BeautySalon17.Pages
                     LoadProducts();
                 }
             }
-            else MessageBox.Show("Выберите товар.");
+            else
+            {
+                MessageBox.Show("Выберите товар.");
+            }
         }
-
-        // ==================== ПРОИЗВОДИТЕЛИ ====================
+        /// <summary>
+        /// Загружаю список всех производителей
+        /// </summary>
         private void LoadManufacturers()
         {
             using (var context = new BeautySalonEntities())
@@ -392,6 +465,9 @@ namespace BeautySalon17.Pages
             }
         }
 
+        /// <summary>
+        /// Добавляю нового производителя
+        /// </summary>
         private void BtnAddManufacturer_Click(object sender, RoutedEventArgs e)
         {
             string name = Microsoft.VisualBasic.Interaction.InputBox("Название производителя:", "Добавить", "");
@@ -406,6 +482,9 @@ namespace BeautySalon17.Pages
             }
         }
 
+        /// <summary>
+        /// Изменяю название выбранного производителя
+        /// </summary>
         private void BtnEditManufacturer_Click(object sender, RoutedEventArgs e)
         {
             if (DgManufacturers.SelectedItem is Manufacturers m)
@@ -422,10 +501,14 @@ namespace BeautySalon17.Pages
                     LoadManufacturers();
                 }
             }
-            else MessageBox.Show("Выберите производителя.");
+            else
+            {
+                MessageBox.Show("Выберите производителя.");
+            }
         }
-
-        // ==================== ТИПЫ ТОВАРОВ ====================
+        /// <summary>
+        /// Загружаю список всех типов товаров.
+        /// </summary>
         private void LoadProductTypes()
         {
             using (var context = new BeautySalonEntities())
@@ -434,6 +517,9 @@ namespace BeautySalon17.Pages
             }
         }
 
+        /// <summary>
+        /// Добавляю новый тип товара
+        /// </summary>
         private void BtnAddProductType_Click(object sender, RoutedEventArgs e)
         {
             string name = Microsoft.VisualBasic.Interaction.InputBox("Название типа товара:", "Добавить", "");
@@ -447,7 +533,9 @@ namespace BeautySalon17.Pages
                 LoadProductTypes();
             }
         }
-
+        /// <summary>
+        /// Изменяю название выбранного типа товара
+        /// </summary>
         private void BtnEditProductType_Click(object sender, RoutedEventArgs e)
         {
             if (DgProductTypes.SelectedItem is ProductTypes pt)
@@ -464,10 +552,14 @@ namespace BeautySalon17.Pages
                     LoadProductTypes();
                 }
             }
-            else MessageBox.Show("Выберите тип товара.");
+            else
+            {
+                MessageBox.Show("Выберите тип товара.");
+            }
         }
-
-        // ==================== УСЛУГИ ====================
+        /// <summary>
+        /// Загружаю список всех услуг
+        /// </summary>
         private void LoadServices()
         {
             using (var context = new BeautySalonEntities())
@@ -475,13 +567,17 @@ namespace BeautySalon17.Pages
                 DgServices.ItemsSource = context.Services.ToList();
             }
         }
-
+        /// <summary>
+        /// Добавляю новую услугу
+        /// </summary>
         private void BtnAddService_Click(object sender, RoutedEventArgs e)
         {
             string name = Microsoft.VisualBasic.Interaction.InputBox("Название услуги:", "Добавить", "");
             if (string.IsNullOrWhiteSpace(name)) return;
+
             string durStr = Microsoft.VisualBasic.Interaction.InputBox("Длительность (мин):", "Добавить", "60");
             if (!int.TryParse(durStr, out int dur)) return;
+
             string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Цена:", "Добавить", "1000");
             if (!decimal.TryParse(priceStr, out decimal price)) return;
 
@@ -492,15 +588,19 @@ namespace BeautySalon17.Pages
             }
             LoadServices();
         }
-
+        /// <summary>
+        /// Изменяю название, длительность и цену выбранной услуги
+        /// </summary>
         private void BtnEditService_Click(object sender, RoutedEventArgs e)
         {
             if (DgServices.SelectedItem is Services srv)
             {
                 string name = Microsoft.VisualBasic.Interaction.InputBox("Новое название:", "Изменить", srv.Name);
                 if (string.IsNullOrWhiteSpace(name)) return;
+
                 string durStr = Microsoft.VisualBasic.Interaction.InputBox("Новая длительность (мин):", "Изменить", srv.Duration.ToString());
                 if (!int.TryParse(durStr, out int dur)) return;
+
                 string priceStr = Microsoft.VisualBasic.Interaction.InputBox("Новая цена:", "Изменить", srv.Price.ToString());
                 if (!decimal.TryParse(priceStr, out decimal price)) return;
 
@@ -517,14 +617,20 @@ namespace BeautySalon17.Pages
                 }
                 LoadServices();
             }
-            else MessageBox.Show("Выберите услугу.");
+            else
+            {
+                MessageBox.Show("Выберите услугу.");
+            }
         }
-
-        // ==================== НАЗАД ====================
+        /// <summary>
+        /// Кнопка "Назад"
+        /// </summary>
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
-            if (NavigationService.CanGoBack) NavigationService.GoBack();
-            else NavigationService.Navigate(new StartPage());
+            if (NavigationService.CanGoBack)
+                NavigationService.GoBack();
+            else
+                NavigationService.Navigate(new StartPage());
         }
     }
 }

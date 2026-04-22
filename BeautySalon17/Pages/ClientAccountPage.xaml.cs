@@ -22,13 +22,11 @@ namespace BeautySalon17.Pages
     public partial class ClientAccountPage : Page
     {
         private List<Appointments> _appointments; // все записи клиента
-
         public ClientAccountPage()
         {
             InitializeComponent();
             LoadAllData();
         }
-
         // Загружаем записи на услуги и заказы товаров
         private void LoadAllData()
         {
@@ -37,19 +35,11 @@ namespace BeautySalon17.Pages
                 using (var db = new BeautySalonEntities())
                 {
                     // Записи (с мастером и услугой)
-                    _appointments = db.Appointments
-                                      .Include("Services")
-                                      .Include("Users1")   // мастер (навигационное свойство)
-                                      .Where(a => a.ClientId == CurrentUser.Id)
-                                      .OrderByDescending(a => a.AppointmentDateTime)
-                                      .ToList();
+                    _appointments = db.Appointments.Include("Services").Include("Users1").Where(a => a.ClientId == CurrentUser.Id).OrderByDescending(a => a.AppointmentDateTime).ToList();
                     DgAppointments.ItemsSource = _appointments;
 
                     // Заказы товаров
-                    var orders = db.Orders
-                                   .Where(o => o.ClientId == CurrentUser.Id)
-                                   .OrderByDescending(o => o.OrderDate)
-                                   .ToList();
+                    var orders = db.Orders.Where(o => o.ClientId == CurrentUser.Id).OrderByDescending(o => o.OrderDate).ToList();
                     DgOrders.ItemsSource = orders;
                 }
             }
@@ -58,7 +48,6 @@ namespace BeautySalon17.Pages
                 MessageBox.Show($"Ошибка загрузки данных: {ex.Message}");
             }
         }
-
         // Фильтр записей по выбранной дате
         private void BtnFilter_Click(object sender, RoutedEventArgs e)
         {

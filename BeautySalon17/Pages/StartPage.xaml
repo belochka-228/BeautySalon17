@@ -18,8 +18,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <!-- Верхняя панель с кнопками -->
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
             <Button x:Name="BtnLogin" Content="Войти" Width="80" Height="30" Click="BtnLogin_Click" Visibility="Visible"/>
             <Button x:Name="BtnAccount" Content="Аккаунт" Width="80" Height="30" Click="BtnAccount_Click" Visibility="Collapsed" Margin="10,0,0,0"/>
@@ -27,7 +25,6 @@
             <Button x:Name="BtnProducts" Content="Товары" Width="80" Height="30" Click="BtnProducts_Click" Margin="10,0,0,0"/>
         </StackPanel>
 
-        <!-- Панель фильтров -->
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,15">
             <TextBlock Text="Фильтр по услуге:" VerticalAlignment="Center" Margin="0,0,5,0"/>
             <ComboBox x:Name="CmbFilterService" Width="180" Height="30" Margin="0,0,20,0"
@@ -38,36 +35,27 @@
             <Button Content="Сбросить" Width="80" Height="30" Margin="20,0,0,0" Click="BtnResetFilters_Click"/>
         </StackPanel>
 
-        <!-- Область сетки услуг -->
         <ScrollViewer Grid.Row="2" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <WrapPanel x:Name="ServicesWrapPanel" Orientation="Horizontal" HorizontalAlignment="Center"
                        ItemWidth="220" ItemHeight="280"/>
         </ScrollViewer>
 
-        <!-- Правая панель выбора мастера и времени -->
         <Border Grid.Row="2" Grid.Column="1" BorderBrush="LightGray" BorderThickness="1,0,0,0" Padding="15,0,0,0">
             <Grid>
                 <StackPanel x:Name="SelectionPanel" Visibility="Collapsed">
                     <TextBlock x:Name="TxtSelectedService" FontWeight="Bold" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                     <TextBlock Text="Выберите мастера:" FontWeight="Bold" Margin="0,0,0,5"/>
-                    <ListBox x:Name="LbMasters" Height="120" Margin="0,0,0,15"
-             SelectionChanged="LbMasters_SelectionChanged"
-             DisplayMemberPath="FullName" SelectedValuePath="Id"/>
+                    <ListBox x:Name="LbMasters" Height="120" Margin="0,0,0,15" SelectionChanged="LbMasters_SelectionChanged" DisplayMemberPath="FullName" SelectedValuePath="Id"/>
 
-                    <!-- ВЫБОР ДАТЫ (новый элемент) -->
                     <TextBlock Text="Выберите дату:" FontWeight="Bold" Margin="0,0,0,5"/>
-                    <DatePicker x:Name="DpAppointmentDate" Width="150" Height="30" Margin="0,0,0,15"
-                    SelectedDate="{x:Static system:DateTime.Today}"
+                    <DatePicker x:Name="DpAppointmentDate" Width="150" Height="30" Margin="0,0,0,15" SelectedDate="{x:Static system:DateTime.Today}"
                     SelectedDateChanged="DpAppointmentDate_SelectedDateChanged"/>
                     
                     <TextBlock Text="Выберите время:" FontWeight="Bold" Margin="0,0,0,5"/>
-                    <ListBox x:Name="LbTimeSlots" Height="120" Margin="0,0,0,15"
-         SelectionChanged="LbTimeSlots_SelectionChanged"
-         DisplayMemberPath="TimeSlot"/>
+                    <ListBox x:Name="LbTimeSlots" Height="120" Margin="0,0,0,15" SelectionChanged="LbTimeSlots_SelectionChanged" DisplayMemberPath="TimeSlot"/>
 
-                    <Button x:Name="BtnBook" Content="Записаться" Width="120" Height="35"
-            HorizontalAlignment="Center" IsEnabled="False" Click="BtnBook_Click"/>
+                    <Button x:Name="BtnBook" Content="Записаться" Width="120" Height="35" HorizontalAlignment="Center" IsEnabled="False" Click="BtnBook_Click"/>
                 </StackPanel>
                 <TextBlock x:Name="TxtHint" Text="Выберите услугу слева, чтобы продолжить."
                            FontSize="14" Foreground="Gray" TextWrapping="Wrap"
